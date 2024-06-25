@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Jun 24 15:38:55 2024
+Created on Mon Jun 24 15:39:14 2024
 
 @author: dforc
 """
@@ -15,7 +15,12 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 import qdarkstyle
 
-STATE_FILE = "monitor_brightness_state.json"
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_path, relative_path)
+
+STATE_FILE = resource_path("monitor_brightness_state.json")
 
 def load_state():
     try:
@@ -58,7 +63,8 @@ class BrightnessControlApp(QWidget):
         layout = QVBoxLayout()
 
         self.image_label = QLabel(self)
-        pixmap = QPixmap("logo_2.jpg")
+        logo_path = resource_path('logo_2.png')
+        pixmap = QPixmap(logo_path)
         self.image_label.setPixmap(pixmap)
         self.image_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.image_label)
@@ -173,7 +179,7 @@ class BrightnessControlApp(QWidget):
         }
         QSlider::add-page:horizontal:disabled {
             background: #eee;
-            border-color: #999;
+            border-color: #999.
         }
         QSlider::handle:horizontal:disabled {
             background: #eee;
@@ -259,6 +265,7 @@ class BrightnessControlApp(QWidget):
             self.message_console.append(message)
 
 if __name__ == '__main__':
+    print("Starting GUI...")
     app = QApplication(sys.argv)
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     ex = BrightnessControlApp()

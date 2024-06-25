@@ -12,9 +12,18 @@ import subprocess
 import screen_brightness_control as sbc
 from PyQt5.QtWidgets import (QApplication, QSystemTrayIcon, QMenu, QAction, QWidget)
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import pyqtSignal, QObject
 
-STATE_FILE = "monitor_brightness_state.json"
+class Communicate(QObject):
+    open_settings = pyqtSignal()
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_path, relative_path)
+
+STATE_FILE = resource_path("monitor_brightness_state.json")
+icon_path = resource_path('icon.png')
 
 def load_state():
     try:
@@ -41,19 +50,15 @@ def set_brightness(level, monitor_indices):
         sbc.set_brightness(level, display=index)
 
 class SystemTrayApp(QWidget):
-    def __init__(self):
+    def __init__(self, comm):
         super().__init__()
         self.state = load_state()
+        self.comm = comm
         self.initTray()
 
     def initTray(self):
+        print("Initializing system tray...")
         self.tray_icon = QSystemTrayIcon(self)
-        
-        # Ensure the icon path is correct
-        icon_path = "icon.png"  # Change to your icon path
-        if not os.path.exists(icon_path):
-            icon_path = "/usr/share/icons/default.png"  # Fallback icon path
-
         self.tray_icon.setIcon(QIcon(icon_path))
 
         self.tray_menu = QMenu(self)
@@ -74,6 +79,7 @@ class SystemTrayApp(QWidget):
         self.tray_icon.show()
 
     def update_profiles(self):
+        print("Updating profiles...")
         self.profile_menu.clear()
         self.state = load_state()  # Reload the state
         for profile in self.state["profiles"]:
@@ -82,10 +88,13 @@ class SystemTrayApp(QWidget):
             self.profile_menu.addAction(profile_action)
 
     def open_settings(self):
-        # Use subprocess to open the main GUI script
-        script_path = "path_to_main_gui_script.py"  # Change this to the path of your main GUI script
-        subprocess.Popen([sys.executable, script_path]).wait()
-        self.update_profiles()  # Update profiles after settings are closed
+        print("Opening settings...")
+        script_path = resource_path("dim_screen_json.py")
+        print(f"Script path: {script_path}")
+        try:
+            subprocess.Popen([sys.executable, script_path])
+        except Exception as e:
+            print(f"Failed to launch settings GUI: {e}")
 
     def switch_profile(self, profile_name):
         profile = self.state["profiles"][profile_name]
@@ -96,11 +105,16 @@ class SystemTrayApp(QWidget):
         self.tray_icon.hide()  # Hide the tray icon
         QApplication.instance().quit()  # Quit the application
 
-if __name__ == '__main__':
+def main():
     app = QApplication(sys.argv)
     QApplication.setQuitOnLastWindowClosed(False)  # Ensure the app doesn't quit when the last window is closed
 
-    tray_app = SystemTrayApp()
-    tray_app.show()  # This may be necessary to keep a reference to the app
-
+    comm = Communicate()
+    tray_app = SystemTrayApp(comm)
+    
+    comm.open_settings.connect(tray_app.open_settings)
+    
     sys.exit(app.exec_())
+
+if __name__ == '__main__':
+    main()
