@@ -17,16 +17,18 @@ import qdarkstyle
 
 class Communicate(QObject):
     open_settings = pyqtSignal()
-    profiles_updated = pyqtSignal()  # New signal for updating profiles
+    profiles_updated = pyqtSignal(str)
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
     base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_path, relative_path)
 
+# Configuration variables
 STATE_FILE = resource_path("monitor_brightness_state.json")
 ICON_PATH = resource_path('icon.png')
 LOGO_PATH = resource_path('logo_2.png')
+HOVER_TEXT = "Monitor Brightness Control"
 
 def load_state():
     try:
@@ -46,6 +48,8 @@ def load_state():
                 "monitors": [0, 1, 2, 3]
             }
         }
+    if "last_active_profile" not in state:
+        state["last_active_profile"] = "Default"
     return state
 
 def save_state(state):
@@ -59,9 +63,9 @@ def set_brightness(level, monitor_indices):
 class BrightnessControlApp(QWidget):
     def __init__(self, comm):
         super().__init__()
-        self.comm = comm  # Store the Communicate instance
+        self.comm = comm
         self.state = load_state()
-        self.current_profile = "Default"
+        self.current_profile = self.state.get("last_active_profile", "Default")
         self.initUI()
 
     def initUI(self):
@@ -74,6 +78,11 @@ class BrightnessControlApp(QWidget):
         self.image_label.setPixmap(pixmap)
         self.image_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.image_label)
+
+        self.current_profile_label = QLabel(f'Currently Active Profile: {self.current_profile}', self)
+        self.current_profile_label.setStyleSheet("font-size: 20px; font-weight: bold; color: #228B22; text-align: center;")
+        self.current_profile_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.current_profile_label)
 
         self.default_label = QLabel('Default Brightness Level: ', self)
         layout.addWidget(self.default_label)
@@ -98,17 +107,14 @@ class BrightnessControlApp(QWidget):
         layout.addWidget(self.dim_slider)
 
         self.monitor_checkboxes = []
-        try:
-            monitors = sbc.list_monitors_info()
-            for i, monitor in enumerate(monitors):
-                print(f"Monitor {i}: {monitor}")  # Detailed monitor information
-                cb = QCheckBox(f'Monitor {i}: {monitor["name"]}', self)
-                cb.setChecked(i in self.state["profiles"][self.current_profile]["monitors"])
-                self.monitor_checkboxes.append(cb)
-                layout.addWidget(cb)
-        except Exception as e:
-            print(f"Failed to retrieve monitor information: {e}")
-            self.show_message(f"Failed to retrieve monitor information: {e}", warning=True)
+        self.monitor_layout = QVBoxLayout()
+        self.refresh_monitors()
+        layout.addLayout(self.monitor_layout)
+
+        refresh_button = QPushButton('Refresh Monitors', self)
+        refresh_button.setStyleSheet(self.button_style())
+        refresh_button.clicked.connect(self.refresh_monitors)
+        layout.addWidget(refresh_button)
 
         button_row = QHBoxLayout()
         self.toggle_button = QPushButton('Toggle Brightness', self)
@@ -120,7 +126,7 @@ class BrightnessControlApp(QWidget):
         self.save_button.setStyleSheet(self.button_style())
         self.save_button.clicked.connect(self.save_settings)
         button_row.addWidget(self.save_button)
-        
+
         layout.addLayout(button_row)
 
         profile_select_label = QLabel('Profile Selection:', self)
@@ -129,6 +135,7 @@ class BrightnessControlApp(QWidget):
 
         self.profile_dropdown = QComboBox(self)
         self.profile_dropdown.addItems(self.state["profiles"].keys())
+        self.profile_dropdown.setCurrentText(self.current_profile)
         self.profile_dropdown.currentTextChanged.connect(self.load_profile)
         layout.addWidget(self.profile_dropdown)
 
@@ -142,8 +149,13 @@ class BrightnessControlApp(QWidget):
         self.delete_profile_button.setStyleSheet(self.button_style())
         self.delete_profile_button.clicked.connect(self.delete_profile)
         profile_button_row.addWidget(self.delete_profile_button)
-        
+
         layout.addLayout(profile_button_row)
+
+        self.make_active_profile_button = QPushButton('Make Profile Active', self)
+        self.make_active_profile_button.setStyleSheet(self.button_style())
+        self.make_active_profile_button.clicked.connect(self.make_profile_active)
+        layout.addWidget(self.make_active_profile_button)
 
         self.message_console = QTextEdit(self)
         self.message_console.setReadOnly(True)
@@ -227,23 +239,37 @@ class BrightnessControlApp(QWidget):
         self.show_message(f'Brightness set to {new_level}.')
 
     def save_settings(self):
-        # Update the profile settings in state
         self.state["profiles"][self.current_profile] = {
             "default_level": self.default_slider.value(),
             "dim_level": self.dim_slider.value(),
             "monitors": [i for i, cb in enumerate(self.monitor_checkboxes) if cb.isChecked()]
         }
+        self.state["last_active_profile"] = self.current_profile
         save_state(self.state)
         self.show_message(f'Settings for profile "{self.current_profile}" saved successfully.')
-        self.comm.profiles_updated.emit()  # Emit the profiles_updated signal
+        self.comm.profiles_updated.emit(self.current_profile)
 
     def load_profile(self, profile_name):
-        self.current_profile = profile_name
         profile = self.state["profiles"][profile_name]
         self.default_slider.setValue(profile["default_level"])
         self.dim_slider.setValue(profile["dim_level"])
         for i, cb in enumerate(self.monitor_checkboxes):
             cb.setChecked(i in profile["monitors"])
+
+    def refresh_monitors(self):
+        for i in reversed(range(self.monitor_layout.count())): 
+            self.monitor_layout.itemAt(i).widget().setParent(None)
+
+        self.monitor_checkboxes = []
+        try:
+            monitors = sbc.list_monitors_info()
+            for i, monitor in enumerate(monitors):
+                cb = QCheckBox(f'Monitor {i}: {monitor["name"]}', self)
+                cb.setChecked(i in self.state["profiles"][self.current_profile]["monitors"])
+                self.monitor_checkboxes.append(cb)
+                self.monitor_layout.addWidget(cb)
+        except Exception as e:
+            self.show_message(f"Failed to retrieve monitor information: {e}", warning=True)
 
     def add_profile(self):
         new_profile_name, ok = QInputDialog.getText(self, 'Add Profile', 'Enter profile name:')
@@ -258,7 +284,7 @@ class BrightnessControlApp(QWidget):
             self.profile_dropdown.setCurrentText(new_profile_name)
             self.save_settings()
             self.show_message(f'Profile {new_profile_name} added successfully.')
-            self.comm.profiles_updated.emit()  # Emit signal when a profile is added
+            self.comm.profiles_updated.emit(self.current_profile)
 
     def delete_profile(self):
         profile_name = self.profile_dropdown.currentText()
@@ -269,9 +295,23 @@ class BrightnessControlApp(QWidget):
             self.profile_dropdown.setCurrentText("Default")
             self.load_profile("Default")
             self.show_message(f'Profile {profile_name} deleted successfully.')
-            self.comm.profiles_updated.emit()  # Emit signal when a profile is deleted
+            self.comm.profiles_updated.emit(self.current_profile)
         else:
             self.show_message('Cannot delete the default profile.', warning=True)
+
+    def make_profile_active(self):
+        profile_name = self.profile_dropdown.currentText()
+        self.current_profile = profile_name
+        profile = self.state["profiles"][profile_name]
+        set_brightness(profile["default_level"], profile["monitors"])
+        self.state["last_active_profile"] = profile_name
+        save_state(self.state)
+        self.comm.profiles_updated.emit(profile_name)
+        self.show_message(f'Profile "{profile_name}" is now active.')
+
+    def update_current_profile_label(self, profile_name):
+        self.current_profile_label.setText(f'Currently Active Profile: {profile_name}')
+        self.current_profile = profile_name
 
     def show_message(self, message, warning=False):
         if warning:
@@ -284,14 +324,16 @@ class SystemTrayApp(QWidget):
         super().__init__()
         self.state = load_state()
         self.comm = comm
-        self.current_active_profile = "Default"  # Default active profile
+        self.current_active_profile = self.state.get("last_active_profile", "Default")
         self.initTray()
-        self.comm.profiles_updated.connect(self.update_profiles)  # Connect signal to update method
+        self.comm.profiles_updated.connect(self.update_profiles)
+        self.comm.profiles_updated.connect(self.update_current_active_profile)
 
     def initTray(self):
         print("Initializing system tray...")
         self.tray_icon = QSystemTrayIcon(self)
         self.tray_icon.setIcon(QIcon(ICON_PATH))
+        self.tray_icon.setToolTip(HOVER_TEXT)
 
         self.tray_menu = QMenu(self)
 
@@ -299,9 +341,13 @@ class SystemTrayApp(QWidget):
         open_action.triggered.connect(self.open_settings)
         self.tray_menu.addAction(open_action)
 
+        self.tray_menu.addSeparator()
+
         self.profile_menu = QMenu("Switch Profile", self)
         self.tray_menu.addMenu(self.profile_menu)
         self.update_profiles()
+
+        self.tray_menu.addSeparator()
 
         exit_action = QAction("Exit", self)
         exit_action.triggered.connect(self.exit_app)
@@ -311,15 +357,17 @@ class SystemTrayApp(QWidget):
         self.tray_icon.show()
 
     def update_profiles(self):
-        print("Updating profiles...")
+        print("Updating profiles in system tray...")
         self.profile_menu.clear()
-        self.state = load_state()  # Reload the state
+        self.state = load_state()
         for profile in self.state["profiles"]:
-            # Check if the profile is the current active profile
+            profile_action = QAction(profile, self)
             if profile == self.current_active_profile:
-                profile_action = QAction(f"✔ {profile}", self)  # Adding a checkmark
+                profile_action.setCheckable(True)
+                profile_action.setChecked(True)
             else:
-                profile_action = QAction(profile, self)
+                profile_action.setCheckable(True)
+                profile_action.setChecked(False)
             profile_action.triggered.connect(lambda checked, p=profile: self.switch_profile(p))
             self.profile_menu.addAction(profile_action)
 
@@ -328,28 +376,35 @@ class SystemTrayApp(QWidget):
         self.comm.open_settings.emit()
 
     def switch_profile(self, profile_name):
-        self.current_active_profile = profile_name  # Set the current profile as active
+        self.current_active_profile = profile_name
         profile = self.state["profiles"][profile_name]
         set_brightness(profile["default_level"], profile["monitors"])
+        self.state["last_active_profile"] = profile_name
+        save_state(self.state)
         self.tray_icon.showMessage("Profile Switched", f'Switched to profile "{profile_name}"', QSystemTrayIcon.Information, 2000)
-        self.update_profiles()  # Refresh the profile list with the active profile marked
+        self.comm.profiles_updated.emit(profile_name)  # Emit signal to update GUI
+        self.update_profiles()
 
+    def update_current_active_profile(self, profile_name):
+        self.current_active_profile = profile_name
+        self.update_profiles()
 
     def exit_app(self):
-        self.tray_icon.hide()  # Hide the tray icon
-        QApplication.instance().quit()  # Quit the application
+        self.tray_icon.hide()
+        QApplication.instance().quit()
 
 def main():
     app = QApplication(sys.argv)
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     QApplication.setQuitOnLastWindowClosed(False)
 
-    comm = Communicate()  # Create a Communicate instance
+    comm = Communicate()
 
-    tray_app = SystemTrayApp(comm)  # Pass the Communicate instance to the SystemTrayApp
-    control_app = BrightnessControlApp(comm)  # Pass the same Communicate instance to the BrightnessControlApp
+    tray_app = SystemTrayApp(comm)
+    control_app = BrightnessControlApp(comm)
 
-    comm.open_settings.connect(control_app.show)  # Connect signal for opening settings
+    comm.open_settings.connect(control_app.show)
+    comm.profiles_updated.connect(control_app.update_current_profile_label)
 
     sys.exit(app.exec_())
 
