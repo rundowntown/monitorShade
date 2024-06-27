@@ -8,6 +8,8 @@ Created on Mon Jun 24 18:24:58 2024
 import sys
 import os
 import json
+import html
+import re
 import screen_brightness_control as sbc
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
                              QLabel, QSlider, QPushButton, QCheckBox, QInputDialog, QTextEdit, QComboBox, QSystemTrayIcon, QMenu, QAction)
@@ -37,8 +39,9 @@ def load_state():
                 state = json.load(file)
         else:
             state = {}
-    except (json.JSONDecodeError, IOError):
+    except (json.JSONDecodeError, IOError) as e:
         state = {}
+        print(f"Error loading state file: {e}")
 
     if "profiles" not in state:
         state["profiles"] = {
@@ -53,12 +56,19 @@ def load_state():
     return state
 
 def save_state(state):
-    with open(STATE_FILE, "w") as file:
-        json.dump(state, file)
+    try:
+        with open(STATE_FILE, "w") as file:
+            json.dump(state, file)
+    except (IOError, TypeError) as e:
+        print(f"Error saving state file: {e}")
 
 def set_brightness(level, monitor_indices):
     for index in monitor_indices:
         sbc.set_brightness(level, display=index)
+
+def is_valid_profile_name(profile_name):
+    """Validate profile name to prevent injection attacks."""
+    return bool(re.match(r'^[\w\s]+$', profile_name))
 
 class BrightnessControlApp(QWidget):
     def __init__(self, comm):
@@ -273,18 +283,21 @@ class BrightnessControlApp(QWidget):
 
     def add_profile(self):
         new_profile_name, ok = QInputDialog.getText(self, 'Add Profile', 'Enter profile name:')
-        if ok and new_profile_name.strip() and new_profile_name not in self.state["profiles"]:
+        if ok and new_profile_name.strip() and is_valid_profile_name(new_profile_name):
             new_profile_name = new_profile_name.strip()
-            self.state["profiles"][new_profile_name] = {
-                "default_level": self.default_slider.value(),
-                "dim_level": self.dim_slider.value(),
-                "monitors": [i for i, cb in enumerate(self.monitor_checkboxes) if cb.isChecked()]
-            }
-            self.profile_dropdown.addItem(new_profile_name)
-            self.profile_dropdown.setCurrentText(new_profile_name)
-            self.save_settings()
-            self.show_message(f'Profile {new_profile_name} added successfully.')
-            self.comm.profiles_updated.emit(self.current_profile)
+            if new_profile_name not in self.state["profiles"]:
+                self.state["profiles"][new_profile_name] = {
+                    "default_level": self.default_slider.value(),
+                    "dim_level": self.dim_slider.value(),
+                    "monitors": [i for i, cb in enumerate(self.monitor_checkboxes) if cb.isChecked()]
+                }
+                self.profile_dropdown.addItem(new_profile_name)
+                self.profile_dropdown.setCurrentText(new_profile_name)
+                self.save_settings()
+                self.show_message(f'Profile {new_profile_name} added successfully.')
+                self.comm.profiles_updated.emit(self.current_profile)
+        else:
+            self.show_message('Invalid profile name.', warning=True)
 
     def delete_profile(self):
         profile_name = self.profile_dropdown.currentText()
@@ -314,6 +327,7 @@ class BrightnessControlApp(QWidget):
         self.current_profile = profile_name
 
     def show_message(self, message, warning=False):
+        message = html.escape(message)
         if warning:
             self.message_console.append(f"<span style='color: red;'>{message}</span>")
         else:
