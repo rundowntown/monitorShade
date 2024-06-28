@@ -1,0 +1,149 @@
+{
+    "profiles": {
+        "Default": {
+            "default_level": 100,
+            "dim_level": 30,
+            "monitors": [
+                0,
+                1,
+                2,
+                3
+            ]
+        },
+        "PleaseWork": {
+            "name": "PleaseWork",
+            "mode": "Auto",
+            "brightness": [
+                89,
+                89,
+                89,
+                89,
+                100,
+                100,
+                100,
+                100
+            ],
+            "toggle_brightness": [
+                [
+                    100,
+                    50
+                ],
+                [
+                    97,
+                    50
+                ],
+                [
+                    97,
+                    50
+                ],
+                [
+                    97,
+                    50
+                ],
+                [
+                    100,
+                    50
+                ],
+                [
+                    100,
+                    50
+                ],
+                [
+                    100,
+                    50
+                ],
+                [
+                    100,
+                    50
+                ]
+            ]
+        },
+        "ToggleTester": {
+            "name": "ToggleTester",
+            "mode": "Auto",
+            "brightness": [
+                89,
+                89,
+                89,
+                89,
+                100,
+                100,
+                100,
+                100
+            ],
+            "toggle_brightness": [
+                [
+                    100,
+                    50
+                ],
+                [
+                    34,
+                    50
+                ],
+                [
+                    34,
+                    50
+                ],
+                [
+                    34,
+                    50
+                ],
+                [
+                    100,
+                    50
+                ],
+                [
+                    100,
+                    50
+                ],
+                [
+                    100,
+                    50
+                ],
+                [
+                    100,
+                    50
+                ]
+            ]
+        },
+        "WOW": {
+            "name": "WOW",
+            "mode": "Auto",
+            "monitors": [
+                {
+                    "name": "Monitor 0",
+                    "brightness": 100
+                },
+                {
+                    "name": "Monitor 1",
+                    "brightness": 100
+                },
+                {
+                    "name": "Monitor 2",
+                    "brightness": 100
+                },
+                {
+                    "name": "Monitor 3",
+                    "brightness": 100
+                },
+                {
+                    "name": "Monitor 4",
+                    "brightness": 100
+                },
+                {
+                    "name": "Monitor 5",
+                    "brightness": 100
+                },
+                {
+                    "name": "Monitor 6",
+                    "brightness": 100
+                },
+                {
+                    "name": "Monitor 7",
+                    "brightness": 100
+                }
+            ]
+        }
+    },
+    "last_active_profile": "WOW"
+}
