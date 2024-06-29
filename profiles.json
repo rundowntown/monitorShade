@@ -21,13 +21,10 @@
     },
     "AUTO TEST": {
         "mode": "Auto",
-        "monitors_selected": [
-            0,
-            1
-        ],
+        "monitors_selected": [],
         "brightness_values": [
-            96,
-            96,
+            100,
+            100,
             100,
             100,
             100,
