@@ -1,0 +1,40 @@
+{
+    "TOGGLETEST": {
+        "mode": "Toggle",
+        "monitors_selected": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "brightness_values": [],
+        "dimness_values": [
+            20,
+            20,
+            20,
+            20,
+            50,
+            50,
+            50,
+            50
+        ]
+    },
+    "AUTO TEST": {
+        "mode": "Auto",
+        "monitors_selected": [
+            0,
+            1
+        ],
+        "brightness_values": [
+            96,
+            96,
+            100,
+            100,
+            100,
+            100,
+            100,
+            100
+        ],
+        "dimness_values": []
+    }
+}

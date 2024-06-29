@@ -4,13 +4,65 @@ Created on Thu Jun 27 16:45:43 2024
 
 @author: dforc
 """
+import json
+import os
+import sys
+import re
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-    QCheckBox, QSlider, QLabel, QFrame, QPlainTextEdit, QSplitter, QGroupBox, QSizePolicy, QSpacerItem, QComboBox
+    QCheckBox, QSlider, QLabel, QFrame, QPlainTextEdit, QSplitter, QGroupBox,
+    QSizePolicy, QSpacerItem, QComboBox, QInputDialog
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
 import screen_brightness_control as sbc
+
+
+
+## Validate Profile Name
+def is_valid_profile_name(profile_name):
+    """Validate profile name to prevent injection attacks."""
+    return bool(re.match(r'^[\w\s]+$', profile_name))
+
+
+
+class ProfileManager:
+    def __init__(self, file_name='profiles.json'):
+        self.file_name = self.resource_path(file_name)
+        self.profiles = self.load_profiles()
+
+    def resource_path(self, relative_path):
+        """ Get absolute path to resource, works for dev and for PyInstaller """
+        base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+        return os.path.join(base_path, relative_path)
+
+    def load_profiles(self):
+        if os.path.exists(self.file_name):
+            with open(self.file_name, 'r') as file:
+                return json.load(file)
+        else:
+            return {}
+
+    def save_profiles(self):
+        with open(self.file_name, 'w') as file:
+            json.dump(self.profiles, file, indent=4)
+
+    def add_profile(self, profile_name, profile_data):
+        self.profiles[profile_name] = profile_data
+        self.save_profiles()
+
+    def delete_profile(self, profile_name):
+        if profile_name in self.profiles:
+            del self.profiles[profile_name]
+            self.save_profiles()
+
+    def get_profiles_by_mode(self, mode):
+        return {name: data for name, data in self.profiles.items() if data['mode'] == mode}
+    
+    
+    
+    
+    
 
 class ClickableFrame(QFrame):
     def __init__(self, app, monitor_id, parent=None):
@@ -47,6 +99,15 @@ class BrightnessControlApp(QMainWindow):
         self.setWindowTitle("Screen Brightness Control")
         self.setGeometry(100, 100, 800, 600)
 
+        self.manual_mode = False  # Initialize manual_mode attribute here
+        self.selected_monitors = []
+        self.all_monitors_control = False
+        self.brightness_values = [100] * 8  # Only 8 monitors
+        self.dimness_values = [50] * 8  # Separate dimness for the bottom row
+        self.current_brightness_state = [False] * 8  # Track which brightness state is active
+
+        self.profile_manager = ProfileManager()
+
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
 
@@ -81,45 +142,97 @@ class BrightnessControlApp(QMainWindow):
         self.create_main_screen()
         self.create_toggle_mode_screen()
 
-        self.manual_mode = False
-        self.selected_monitors = []
-        self.all_monitors_control = False
-        self.brightness_values = [100] * 8  # Only 8 monitors
-        self.dimness_values = [50] * 8  # Separate dimness for the bottom row
-        self.current_brightness_state = [False] * 8  # Track which brightness state is active
         self.toggle_manual_mode()
 
     def create_profile_section(self):
         profile_section = QVBoxLayout()
-
+    
         profile_layout = QHBoxLayout()
         self.profile_combo_box = QComboBox()
         self.add_profile_button = self.create_styled_button("Add Profile")
         self.delete_profile_button = self.create_styled_button("Delete Profile")
         self.make_profile_active_button = self.create_styled_button("Make Profile Active")
-
+    
         profile_layout.addWidget(QLabel("Profile:"))
         profile_layout.addWidget(self.profile_combo_box)
         profile_layout.addWidget(self.add_profile_button)
         profile_layout.addWidget(self.delete_profile_button)
         profile_layout.addWidget(self.make_profile_active_button)
-
+    
         profile_section.addLayout(profile_layout)
-
+    
         self.main_content_layout.addLayout(profile_section)
+        self.load_profiles()
+    
+        self.add_profile_button.clicked.connect(self.add_profile_dialog)  # Connect to add_profile_dialog
+        self.delete_profile_button.clicked.connect(self.delete_current_profile)  # Connect to delete_current_profile
+        
+        
+    def add_profile_dialog(self):
+        profile_name, ok = QInputDialog.getText(self, 'Add Profile', 'Enter profile name:')
+        if ok and profile_name and is_valid_profile_name(profile_name):
+            profile_data = {
+                'mode': 'Auto' if not self.manual_mode else 'Toggle',
+                'monitors_selected': [i for i, checkbox in enumerate(self.monitor_checkboxes) if checkbox.isChecked()],
+                'brightness_values': self.brightness_values,
+                'dimness_values': self.dimness_values if self.manual_mode else []
+            }
+            self.profile_manager.add_profile(profile_name, profile_data)
+            self.console_output.appendPlainText(f'Profile "{profile_name}" added successfully.')
+            self.load_profiles()
+            self.profile_combo_box.setCurrentText(profile_name)  # Set the new profile as the current selection
+        else:
+            self.console_output.appendPlainText('Invalid profile name. Please use only letters, numbers, spaces, and underscores.')      
+            
+            
+            
+    def delete_current_profile(self):
+        profile_name = self.profile_combo_box.currentText()
+        if profile_name:
+            self.profile_manager.delete_profile(profile_name)
+            self.console_output.appendPlainText(f'Profile "{profile_name}" deleted successfully.')
+            self.load_profiles()
+        else:
+            self.console_output.appendPlainText('No profile selected to delete.')            
+        
+
+    def load_profiles(self):
+        self.profile_combo_box.clear()
+        current_mode = 'Auto' if not self.manual_mode else 'Toggle'
+        profiles = self.profile_manager.get_profiles_by_mode(current_mode)
+        for profile_name in profiles:
+            self.profile_combo_box.addItem(profile_name)
+
+    def save_profile(self):
+        profile_name = self.profile_combo_box.currentText()
+        if not profile_name:
+            self.console_output.appendPlainText('No profile selected to save.')
+            return
+    
+        profile_data = {
+            'mode': 'Auto' if not self.manual_mode else 'Toggle',
+            'monitors_selected': [i for i, checkbox in enumerate(self.monitor_checkboxes) if checkbox.isChecked()],
+            'brightness_values': self.brightness_values,
+            'dimness_values': self.dimness_values if self.manual_mode else []
+        }
+    
+        self.profile_manager.add_profile(profile_name, profile_data)
+        self.console_output.appendPlainText(f'Profile "{profile_name}" saved successfully.')
+        self.load_profiles()
 
     def create_left_side_menu(self):
         self.left_menu = QVBoxLayout()
         self.left_menu.setAlignment(Qt.AlignTop)
-
+    
         self.refresh_button = self.create_styled_button("Refresh Monitors")
         self.save_settings_button = self.create_styled_button("Save Settings")
-
+        self.save_settings_button.clicked.connect(self.save_profile)  # Connect to save_profile
+    
         self.left_menu.addWidget(self.refresh_button)
         self.left_menu.addWidget(self.save_settings_button)
-
+    
         self.left_menu.addSpacerItem(QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed))
-
+    
         self.monitor_select_groupbox = QGroupBox("Monitor Select")
         self.monitor_select_groupbox.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.monitor_select_layout = QVBoxLayout(self.monitor_select_groupbox)
@@ -132,14 +245,14 @@ class BrightnessControlApp(QMainWindow):
             checkbox.stateChanged.connect(self.update_monitor_display)
             self.monitor_select_layout.addWidget(checkbox)
         self.left_menu.addWidget(self.monitor_select_groupbox, alignment=Qt.AlignHCenter)
-
+    
         self.left_menu.addSpacerItem(QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed))
-
+    
         self.manual_mode_button = self.create_styled_button("Manual Mode", checkable=True)
         self.manual_mode_button.setFixedHeight(40)
         self.manual_mode_button.clicked.connect(self.toggle_manual_mode)
         self.left_menu.addWidget(self.manual_mode_button)
-
+    
         self.left_menu_layout.addLayout(self.left_menu)
 
     def create_styled_button(self, text, checkable=False):
@@ -279,6 +392,7 @@ class BrightnessControlApp(QMainWindow):
         self.manual_mode_widget.setVisible(self.manual_mode)
         self.selected_monitors = []  # Clear selection when toggling mode
         self.update_monitor_display()
+        self.load_profiles()
 
     def select_all_monitors(self):
         select_all_state = self.select_all_checkbox.isChecked()
@@ -385,11 +499,9 @@ class BrightnessControlApp(QMainWindow):
                 self.dimness_slider_manual.blockSignals(False)
 
     def update_brightness(self):
-        if self.manual_mode:
-            return  # Don't update in real-time in manual mode
-
-        brightness_value = self.brightness_slider.value()
+        brightness_value = self.brightness_slider.value() if not self.manual_mode else self.brightness_slider_manual.value()
         brightness_color_value = int((brightness_value / 100) * 255)
+
         if self.all_monitors_control:
             for i, frame in enumerate(self.monitor_frames):
                 if frame.isVisible():
@@ -399,17 +511,29 @@ class BrightnessControlApp(QMainWindow):
                         border: 2px solid green;
                         border-radius: 10px;
                     """)
-                    sbc.set_brightness(brightness_value, display=i)
+                    if not self.manual_mode:
+                        sbc.set_brightness(brightness_value, display=i)
         else:
-            for frame in self.selected_monitors:
-                monitor_id = frame.monitor_id
-                self.brightness_values[monitor_id] = brightness_value
-                frame.setStyleSheet(f"""
-                    background-color: rgb({brightness_color_value}, {brightness_color_value}, {brightness_color_value});
-                    border: 2px solid blue;
-                    border-radius: 10px;
-                """)
-                sbc.set_brightness(brightness_value, display=monitor_id)
+            if self.manual_mode:
+                for frame in self.monitor_frames_manual:
+                    if frame.isVisible() and frame in self.selected_monitors:
+                        monitor_id = frame.monitor_id
+                        self.brightness_values[monitor_id] = brightness_value
+                        frame.setStyleSheet(f"""
+                            background-color: rgb({brightness_color_value}, {brightness_color_value}, {brightness_color_value});
+                            border: 2px solid blue;
+                            border-radius: 10px;
+                        """)
+            else:
+                for frame in self.selected_monitors:
+                    monitor_id = frame.monitor_id
+                    self.brightness_values[monitor_id] = brightness_value
+                    frame.setStyleSheet(f"""
+                        background-color: rgb({brightness_color_value}, {brightness_color_value}, {brightness_color_value});
+                        border: 2px solid blue;
+                        border-radius: 10px;
+                    """)
+                    sbc.set_brightness(brightness_value, display=monitor_id)
 
         self.update_all_frames()
 
@@ -473,7 +597,7 @@ class BrightnessControlApp(QMainWindow):
                 border: 1px solid black;
                 border-radius: 10px;
             """)
-    
+
     def update_frame_dimness(self, monitor_id):
         dimness_value = self.dimness_values[monitor_id]
         dimness_color_value = int((dimness_value / 100) * 255)
