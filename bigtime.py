@@ -11,7 +11,7 @@ import re
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
     QCheckBox, QSlider, QLabel, QFrame, QPlainTextEdit, QSplitter, QGroupBox,
-    QSizePolicy, QSpacerItem, QComboBox, QInputDialog
+    QSizePolicy, QSpacerItem, QComboBox, QInputDialog, QSpinBox
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
@@ -341,6 +341,13 @@ class BrightnessControlApp(QMainWindow):
         self.brightness_slider.setTickPosition(QSlider.TicksBelow)
         self.brightness_slider.setTickInterval(10)
         self.brightness_slider.valueChanged.connect(self.update_brightness)
+
+        self.brightness_spinbox = QSpinBox()
+        self.brightness_spinbox.setRange(0, 100)
+        self.brightness_spinbox.setValue(100)
+        self.brightness_spinbox.setFixedWidth(75)
+        self.brightness_spinbox.valueChanged.connect(self.brightness_slider.setValue)
+        self.brightness_slider.valueChanged.connect(self.brightness_spinbox.setValue)
     
         control_all_button = self.create_styled_button("Control All Monitors", checkable=True)
         control_all_button.setFixedSize(180, 40)
@@ -350,6 +357,7 @@ class BrightnessControlApp(QMainWindow):
         brightness_layout = QHBoxLayout()
         brightness_layout.addWidget(brightness_label)
         brightness_layout.addWidget(self.brightness_slider)
+        brightness_layout.addWidget(self.brightness_spinbox)
         self.auto_mode_layout.addLayout(brightness_layout)
     
         self.monitor_frames = [ClickableFrame(self, i) for i in range(8)]  # Only 8 monitors
@@ -383,6 +391,13 @@ class BrightnessControlApp(QMainWindow):
         self.brightness_slider_manual.setTickPosition(QSlider.TicksBelow)
         self.brightness_slider_manual.setTickInterval(10)
         self.brightness_slider_manual.valueChanged.connect(self.update_brightness)
+
+        self.brightness_spinbox_manual = QSpinBox()
+        self.brightness_spinbox_manual.setRange(0, 100)
+        self.brightness_spinbox_manual.setValue(100)
+        self.brightness_spinbox_manual.setFixedWidth(75)
+        self.brightness_spinbox_manual.valueChanged.connect(self.brightness_slider_manual.setValue)
+        self.brightness_slider_manual.valueChanged.connect(self.brightness_spinbox_manual.setValue)
     
         dimness_label_manual = QLabel("Dimness")
         self.dimness_slider_manual = QSlider(Qt.Horizontal)
@@ -391,6 +406,13 @@ class BrightnessControlApp(QMainWindow):
         self.dimness_slider_manual.setTickPosition(QSlider.TicksBelow)
         self.dimness_slider_manual.setTickInterval(10)
         self.dimness_slider_manual.valueChanged.connect(self.update_dimness)
+
+        self.dimness_spinbox_manual = QSpinBox()
+        self.dimness_spinbox_manual.setRange(0, 100)
+        self.dimness_spinbox_manual.setValue(50)
+        self.dimness_spinbox_manual.setFixedWidth(75)
+        self.dimness_spinbox_manual.valueChanged.connect(self.dimness_slider_manual.setValue)
+        self.dimness_slider_manual.valueChanged.connect(self.dimness_spinbox_manual.setValue)
     
         control_all_button_manual = self.create_styled_button("Control All Monitors", checkable=True)
         control_all_button_manual.setFixedSize(180, 40)
@@ -405,11 +427,13 @@ class BrightnessControlApp(QMainWindow):
         brightness_layout_manual = QHBoxLayout()
         brightness_layout_manual.addWidget(brightness_label_manual)
         brightness_layout_manual.addWidget(self.brightness_slider_manual)
+        brightness_layout_manual.addWidget(self.brightness_spinbox_manual)
         self.manual_mode_layout.addLayout(brightness_layout_manual)
     
         dimness_layout_manual = QHBoxLayout()
         dimness_layout_manual.addWidget(dimness_label_manual)
         dimness_layout_manual.addWidget(self.dimness_slider_manual)
+        dimness_layout_manual.addWidget(self.dimness_spinbox_manual)
         self.manual_mode_layout.addLayout(dimness_layout_manual)
     
         self.monitor_frames_manual = [ClickableFrame(self, i) for i in range(8)]  # Only 8 monitors for brightness
@@ -542,27 +566,32 @@ class BrightnessControlApp(QMainWindow):
             if self.manual_mode:
                 self.brightness_slider_manual.blockSignals(True)
                 self.brightness_slider_manual.setValue(self.brightness_values[monitor_id])
+                self.brightness_spinbox_manual.setValue(self.brightness_values[monitor_id])
                 self.brightness_slider_manual.blockSignals(False)
                 self.dimness_slider_manual.blockSignals(True)
                 self.dimness_slider_manual.setValue(self.dimness_values[monitor_id])
+                self.dimness_spinbox_manual.setValue(self.dimness_values[monitor_id])
                 self.dimness_slider_manual.blockSignals(False)
             else:
                 self.brightness_slider.blockSignals(True)
                 self.brightness_slider.setValue(self.brightness_values[monitor_id])
+                self.brightness_spinbox.setValue(self.brightness_values[monitor_id])
                 self.brightness_slider.blockSignals(False)
         elif self.all_monitors_control:
             self.brightness_slider.blockSignals(True)
             self.brightness_slider.setValue(self.brightness_values[0])
+            self.brightness_spinbox.setValue(self.brightness_values[0])
             self.brightness_slider.blockSignals(False)
             if self.manual_mode:
                 self.dimness_slider_manual.blockSignals(True)
                 self.dimness_slider_manual.setValue(self.dimness_values[0])
+                self.dimness_spinbox_manual.setValue(self.dimness_values[0])
                 self.dimness_slider_manual.blockSignals(False)
 
     def update_brightness(self):
         brightness_value = self.brightness_slider.value() if not self.manual_mode else self.brightness_slider_manual.value()
         brightness_color_value = int((brightness_value / 100) * 255)
-
+    
         if self.all_monitors_control:
             for i, frame in enumerate(self.monitor_frames):
                 if frame.isVisible():
@@ -595,7 +624,12 @@ class BrightnessControlApp(QMainWindow):
                         border-radius: 10px;
                     """)
                     sbc.set_brightness(brightness_value, display=monitor_id)
-
+    
+        if not self.manual_mode:
+            self.brightness_spinbox.setValue(brightness_value)
+        else:
+            self.brightness_spinbox_manual.setValue(brightness_value)
+        
         self.update_all_frames()
 
     def update_dimness(self):

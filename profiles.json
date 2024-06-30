@@ -81,5 +81,26 @@
             "2": 0,
             "3": 0
         }
+    },
+    "Movie_Night": {
+        "mode": "Toggle",
+        "monitors_selected": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "brightness_values": {
+            "0": 100,
+            "1": 100,
+            "2": 100,
+            "3": 100
+        },
+        "dimness_values": {
+            "0": 100,
+            "1": 0,
+            "2": 0,
+            "3": 0
+        }
     }
 }
