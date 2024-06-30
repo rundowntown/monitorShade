@@ -1,37 +1,64 @@
 {
-    "TOGGLETEST": {
-        "mode": "Toggle",
+    "AutoTest": {
+        "mode": "Auto",
         "monitors_selected": [
-            0,
             1,
             2,
             3
         ],
-        "brightness_values": [],
-        "dimness_values": [
-            20,
-            20,
-            20,
-            20,
-            50,
-            50,
-            50,
-            50
-        ]
+        "brightness_values": {
+            "1": 100,
+            "2": 100,
+            "3": 100
+        },
+        "dimness_values": {}
     },
-    "AUTO TEST": {
-        "mode": "Auto",
-        "monitors_selected": [],
-        "brightness_values": [
-            100,
-            100,
-            100,
-            100,
-            100,
-            100,
-            100,
-            100
+    "ToggleTest": {
+        "mode": "Toggle",
+        "monitors_selected": [
+            1,
+            2,
+            3,
+            4
         ],
-        "dimness_values": []
+        "brightness_values": {
+            "1": 100,
+            "2": 100,
+            "3": 100,
+            "4": 100
+        },
+        "dimness_values": {
+            "1": 17,
+            "2": 7,
+            "3": 30,
+            "4": 50
+        }
+    },
+    "AutoTestTwoScreen": {
+        "mode": "Auto",
+        "monitors_selected": [
+            0,
+            2
+        ],
+        "brightness_values": {
+            "0": 100,
+            "2": 68
+        },
+        "dimness_values": {}
+    },
+    "AllWhite": {
+        "mode": "Toggle",
+        "monitors_selected": [
+            1,
+            4
+        ],
+        "brightness_values": {
+            "1": 100,
+            "4": 100
+        },
+        "dimness_values": {
+            "1": 100,
+            "4": 100
+        }
     }
 }

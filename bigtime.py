@@ -17,14 +17,10 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
 import screen_brightness_control as sbc
 
-
-
 ## Validate Profile Name
 def is_valid_profile_name(profile_name):
     """Validate profile name to prevent injection attacks."""
     return bool(re.match(r'^[\w\s]+$', profile_name))
-
-
 
 class ProfileManager:
     def __init__(self, file_name='profiles.json'):
@@ -56,13 +52,11 @@ class ProfileManager:
             del self.profiles[profile_name]
             self.save_profiles()
 
+    def get_profile(self, profile_name):
+        return self.profiles.get(profile_name, None)            
+
     def get_profiles_by_mode(self, mode):
         return {name: data for name, data in self.profiles.items() if data['mode'] == mode}
-    
-    
-    
-    
-    
 
 class ClickableFrame(QFrame):
     def __init__(self, app, monitor_id, parent=None):
@@ -113,6 +107,15 @@ class BrightnessControlApp(QMainWindow):
 
         self.layout = QVBoxLayout(self.central_widget)
 
+        self.create_ui()  # Create the entire UI first
+        self.show()  # Show the main window first
+
+        # Now load the profiles
+        self.load_profiles()
+
+    def create_ui(self):
+        self.create_profile_section()  # Create profile section first
+
         self.main_splitter = QSplitter(Qt.Horizontal)
         self.layout.addWidget(self.main_splitter)
 
@@ -131,24 +134,29 @@ class BrightnessControlApp(QMainWindow):
         self.main_content_layout = QVBoxLayout(self.main_content_widget)
         self.main_splitter.addWidget(self.main_content_widget)
 
-        self.create_profile_section()
-
         self.console_output = QPlainTextEdit()
         self.console_output.setReadOnly(True)
         self.console_output.setFixedHeight(100)
         self.layout.addWidget(self.console_output)
 
-        self.create_left_side_menu()
-        self.create_main_screen()
-        self.create_toggle_mode_screen()
+        self.create_left_side_menu()  # Create the left side menu
 
-        self.toggle_manual_mode()
+        self.create_main_screen()  # Create the main screen components
+        self.create_toggle_mode_screen()  # Create toggle mode components
+
+        self.update_visibility()  # Ensure correct visibility at startup
+
+    def update_visibility(self):
+        if hasattr(self, 'auto_mode_widget') and hasattr(self, 'manual_mode_widget'):
+            self.auto_mode_widget.setVisible(not self.manual_mode)
+            self.manual_mode_widget.setVisible(self.manual_mode)
 
     def create_profile_section(self):
         profile_section = QVBoxLayout()
     
         profile_layout = QHBoxLayout()
         self.profile_combo_box = QComboBox()
+        self.profile_combo_box.currentIndexChanged.connect(self.load_selected_profile)  # Connect to load_selected_profile
         self.add_profile_button = self.create_styled_button("Add Profile")
         self.delete_profile_button = self.create_styled_button("Delete Profile")
         self.make_profile_active_button = self.create_styled_button("Make Profile Active")
@@ -161,12 +169,10 @@ class BrightnessControlApp(QMainWindow):
     
         profile_section.addLayout(profile_layout)
     
-        self.main_content_layout.addLayout(profile_section)
-        self.load_profiles()
+        self.layout.addLayout(profile_section)  # Add profile section to the main layout
     
-        self.add_profile_button.clicked.connect(self.add_profile_dialog)  # Connect to add_profile_dialog
-        self.delete_profile_button.clicked.connect(self.delete_current_profile)  # Connect to delete_current_profile
-        
+        self.add_profile_button.clicked.connect(self.add_profile_dialog)
+        self.delete_profile_button.clicked.connect(self.delete_current_profile)
         
     def add_profile_dialog(self):
         profile_name, ok = QInputDialog.getText(self, 'Add Profile', 'Enter profile name:')
@@ -174,17 +180,15 @@ class BrightnessControlApp(QMainWindow):
             profile_data = {
                 'mode': 'Auto' if not self.manual_mode else 'Toggle',
                 'monitors_selected': [i for i, checkbox in enumerate(self.monitor_checkboxes) if checkbox.isChecked()],
-                'brightness_values': self.brightness_values,
-                'dimness_values': self.dimness_values if self.manual_mode else []
+                'brightness_values': {i: self.brightness_values[i] for i in range(len(self.monitor_checkboxes)) if self.monitor_checkboxes[i].isChecked()},
+                'dimness_values': {i: self.dimness_values[i] for i in range(len(self.monitor_checkboxes)) if self.monitor_checkboxes[i].isChecked()} if self.manual_mode else {}
             }
             self.profile_manager.add_profile(profile_name, profile_data)
             self.console_output.appendPlainText(f'Profile "{profile_name}" added successfully.')
             self.load_profiles()
-            self.profile_combo_box.setCurrentText(profile_name)  # Set the new profile as the current selection
+            self.profile_combo_box.setCurrentText(profile_name)
         else:
-            self.console_output.appendPlainText('Invalid profile name. Please use only letters, numbers, spaces, and underscores.')      
-            
-            
+            self.console_output.appendPlainText('Invalid profile name. Please use only letters, numbers, spaces, and underscores.')
             
     def delete_current_profile(self):
         profile_name = self.profile_combo_box.currentText()
@@ -193,8 +197,7 @@ class BrightnessControlApp(QMainWindow):
             self.console_output.appendPlainText(f'Profile "{profile_name}" deleted successfully.')
             self.load_profiles()
         else:
-            self.console_output.appendPlainText('No profile selected to delete.')            
-        
+            self.console_output.appendPlainText('No profile selected to delete.')
 
     def load_profiles(self):
         self.profile_combo_box.clear()
@@ -202,6 +205,37 @@ class BrightnessControlApp(QMainWindow):
         profiles = self.profile_manager.get_profiles_by_mode(current_mode)
         for profile_name in profiles:
             self.profile_combo_box.addItem(profile_name)
+            
+    def load_selected_profile(self):
+        profile_name = self.profile_combo_box.currentText()
+        profile = self.profile_manager.get_profile(profile_name)
+        if profile:
+            self.apply_profile(profile)
+
+    def apply_profile(self, profile):
+        self.manual_mode = profile['mode'] == 'Toggle'
+        if hasattr(self, 'manual_mode_button'):
+            self.manual_mode_button.setChecked(self.manual_mode)  # Ensure this is set after initialization
+        self.update_visibility()
+    
+        self.selected_monitors.clear()  # Clear the selected monitors
+        selected_monitors = profile['monitors_selected']
+        for i, checkbox in enumerate(self.monitor_checkboxes):
+            checkbox.setChecked(i in selected_monitors)
+    
+        self.brightness_values = [100] * 8  # Reset brightness values
+        self.dimness_values = [50] * 8  # Reset dimness values
+        for monitor_id_str, brightness_value in profile['brightness_values'].items():
+            monitor_id = int(monitor_id_str)  # Convert the key to integer
+            self.brightness_values[monitor_id] = brightness_value
+        if self.manual_mode:
+            for monitor_id_str, dimness_value in profile['dimness_values'].items():
+                monitor_id = int(monitor_id_str)  # Convert the key to integer
+                self.dimness_values[monitor_id] = dimness_value
+    
+        self.update_monitor_display()
+        self.update_brightness_slider()
+        self.update_all_frames()  # Ensure frames are updated to reflect new profile
 
     def save_profile(self):
         profile_name = self.profile_combo_box.currentText()
@@ -212,8 +246,8 @@ class BrightnessControlApp(QMainWindow):
         profile_data = {
             'mode': 'Auto' if not self.manual_mode else 'Toggle',
             'monitors_selected': [i for i, checkbox in enumerate(self.monitor_checkboxes) if checkbox.isChecked()],
-            'brightness_values': self.brightness_values,
-            'dimness_values': self.dimness_values if self.manual_mode else []
+            'brightness_values': {i: self.brightness_values[i] for i in range(len(self.monitor_checkboxes)) if self.monitor_checkboxes[i].isChecked()},
+            'dimness_values': {i: self.dimness_values[i] for i in range(len(self.monitor_checkboxes)) if self.monitor_checkboxes[i].isChecked()} if self.manual_mode else {}
         }
     
         self.profile_manager.add_profile(profile_name, profile_data)
@@ -226,7 +260,7 @@ class BrightnessControlApp(QMainWindow):
     
         self.refresh_button = self.create_styled_button("Refresh Monitors")
         self.save_settings_button = self.create_styled_button("Save Settings")
-        self.save_settings_button.clicked.connect(self.save_profile)  # Connect to save_profile
+        self.save_settings_button.clicked.connect(self.save_profile)
     
         self.left_menu.addWidget(self.refresh_button)
         self.left_menu.addWidget(self.save_settings_button)
@@ -284,15 +318,15 @@ class BrightnessControlApp(QMainWindow):
 
     def create_main_screen(self):
         self.main_screen = QVBoxLayout()
-
+    
         self.auto_mode_widget = QGroupBox("Auto Mode")
         self.auto_mode_layout = QVBoxLayout(self.auto_mode_widget)
-
+    
         self.monitor_display_area = QWidget()
         self.monitor_display_area.setFixedSize(800, 150)  # Adjusted height for single row of monitors
         self.monitor_display_layout = QHBoxLayout(self.monitor_display_area)
         self.auto_mode_layout.addWidget(self.monitor_display_area)
-
+    
         brightness_label = QLabel("Brightness")
         self.brightness_slider = QSlider(Qt.Horizontal)
         self.brightness_slider.setRange(0, 100)
@@ -300,32 +334,32 @@ class BrightnessControlApp(QMainWindow):
         self.brightness_slider.setTickPosition(QSlider.TicksBelow)
         self.brightness_slider.setTickInterval(10)
         self.brightness_slider.valueChanged.connect(self.update_brightness)
-
+    
         control_all_button = self.create_styled_button("Control All Monitors", checkable=True)
         control_all_button.setFixedSize(180, 40)
         control_all_button.clicked.connect(self.control_all_monitors)
         self.auto_mode_layout.addWidget(control_all_button, alignment=Qt.AlignCenter)
-
+    
         brightness_layout = QHBoxLayout()
         brightness_layout.addWidget(brightness_label)
         brightness_layout.addWidget(self.brightness_slider)
         self.auto_mode_layout.addLayout(brightness_layout)
-
+    
         self.monitor_frames = [ClickableFrame(self, i) for i in range(8)]  # Only 8 monitors
         for frame in self.monitor_frames:
             frame.setFixedSize(100, 80)
             frame.setVisible(False)
             self.monitor_display_layout.addWidget(frame)
-
+    
         self.main_screen.addWidget(self.auto_mode_widget)
         self.main_content_layout.addLayout(self.main_screen)
 
     def create_toggle_mode_screen(self):
         self.toggle_mode_screen = QVBoxLayout()
-
+    
         self.manual_mode_widget = QGroupBox("Toggle Mode")
         self.manual_mode_layout = QVBoxLayout(self.manual_mode_widget)
-
+    
         self.monitor_display_area_manual = QWidget()
         self.monitor_display_area_manual.setFixedSize(800, 300)  # Adjusted height for two rows of monitors
         self.monitor_display_layout_manual = QVBoxLayout(self.monitor_display_area_manual)
@@ -334,7 +368,7 @@ class BrightnessControlApp(QMainWindow):
         self.monitor_display_layout_manual.addLayout(self.monitor_display_layout_manual_row1)
         self.monitor_display_layout_manual.addLayout(self.monitor_display_layout_manual_row2)
         self.manual_mode_layout.addWidget(self.monitor_display_area_manual)
-
+    
         brightness_label_manual = QLabel("Brightness")
         self.brightness_slider_manual = QSlider(Qt.Horizontal)
         self.brightness_slider_manual.setRange(0, 100)
@@ -342,7 +376,7 @@ class BrightnessControlApp(QMainWindow):
         self.brightness_slider_manual.setTickPosition(QSlider.TicksBelow)
         self.brightness_slider_manual.setTickInterval(10)
         self.brightness_slider_manual.valueChanged.connect(self.update_brightness)
-
+    
         dimness_label_manual = QLabel("Dimness")
         self.dimness_slider_manual = QSlider(Qt.Horizontal)
         self.dimness_slider_manual.setRange(0, 100)
@@ -350,46 +384,45 @@ class BrightnessControlApp(QMainWindow):
         self.dimness_slider_manual.setTickPosition(QSlider.TicksBelow)
         self.dimness_slider_manual.setTickInterval(10)
         self.dimness_slider_manual.valueChanged.connect(self.update_dimness)
-
+    
         control_all_button_manual = self.create_styled_button("Control All Monitors", checkable=True)
         control_all_button_manual.setFixedSize(180, 40)
         control_all_button_manual.clicked.connect(self.control_all_monitors)
         self.manual_mode_layout.addWidget(control_all_button_manual, alignment=Qt.AlignCenter)
-
+    
         self.toggle_brightness_button = self.create_styled_button("Toggle Brightness")
         self.toggle_brightness_button.setFixedSize(180, 40)
         self.toggle_brightness_button.clicked.connect(self.toggle_brightness)
         self.manual_mode_layout.addWidget(self.toggle_brightness_button, alignment=Qt.AlignCenter)
-
+    
         brightness_layout_manual = QHBoxLayout()
         brightness_layout_manual.addWidget(brightness_label_manual)
         brightness_layout_manual.addWidget(self.brightness_slider_manual)
         self.manual_mode_layout.addLayout(brightness_layout_manual)
-
+    
         dimness_layout_manual = QHBoxLayout()
         dimness_layout_manual.addWidget(dimness_label_manual)
         dimness_layout_manual.addWidget(self.dimness_slider_manual)
         self.manual_mode_layout.addLayout(dimness_layout_manual)
-
+    
         self.monitor_frames_manual = [ClickableFrame(self, i) for i in range(8)]  # Only 8 monitors for brightness
         self.monitor_frames_dimness = [ClickableFrame(self, i) for i in range(8)]  # Only 8 monitors for dimness
         for frame in self.monitor_frames_manual:
             frame.setFixedSize(100, 80)
             frame.setVisible(False)
             self.monitor_display_layout_manual_row1.addWidget(frame)
-
+    
         for frame in self.monitor_frames_dimness:
             frame.setFixedSize(100, 80)
             frame.setVisible(False)
             self.monitor_display_layout_manual_row2.addWidget(frame)
-
+    
         self.toggle_mode_screen.addWidget(self.manual_mode_widget)
         self.main_content_layout.addLayout(self.toggle_mode_screen)
 
     def toggle_manual_mode(self):
         self.manual_mode = self.manual_mode_button.isChecked()
-        self.auto_mode_widget.setVisible(not self.manual_mode)
-        self.manual_mode_widget.setVisible(self.manual_mode)
+        self.update_visibility()
         self.selected_monitors = []  # Clear selection when toggling mode
         self.update_monitor_display()
         self.load_profiles()
@@ -450,6 +483,27 @@ class BrightnessControlApp(QMainWindow):
             self.update_frame_brightness(i)
             self.update_frame_dimness(i)
         self.update_brightness_slider()
+        self.clear_selection_styles()  # Clear previous selection styles
+        
+    def clear_selection_styles(self):
+        for frame in self.monitor_frames:
+            frame.setStyleSheet("""
+                background-color: white;
+                border: 1px solid black;
+                border-radius: 10px;
+            """)
+        for frame in self.monitor_frames_manual:
+            frame.setStyleSheet("""
+                background-color: white;
+                border: 1px solid black;
+                border-radius: 10px;
+            """)
+        for frame in self.monitor_frames_dimness:
+            frame.setStyleSheet("""
+                background-color: white;
+                border: 1px solid black;
+                border-radius: 10px;
+            """)        
 
     def toggle_monitor_selection(self, frame):
         if self.all_monitors_control:
