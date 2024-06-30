@@ -60,5 +60,26 @@
             "1": 100,
             "4": 100
         }
+    },
+    "MostDark": {
+        "mode": "Toggle",
+        "monitors_selected": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "brightness_values": {
+            "0": 62,
+            "1": 62,
+            "2": 62,
+            "3": 62
+        },
+        "dimness_values": {
+            "0": 0,
+            "1": 0,
+            "2": 0,
+            "3": 0
+        }
     }
 }

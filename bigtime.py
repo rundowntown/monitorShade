@@ -114,36 +114,36 @@ class BrightnessControlApp(QMainWindow):
         self.load_profiles()
 
     def create_ui(self):
-        self.create_profile_section()  # Create profile section first
-
         self.main_splitter = QSplitter(Qt.Horizontal)
         self.layout.addWidget(self.main_splitter)
-
+    
         self.left_menu_widget = QWidget()
         self.left_menu_widget.setFixedSize(200, 600)
         self.left_menu_layout = QVBoxLayout(self.left_menu_widget)
         self.left_menu_layout.setAlignment(Qt.AlignCenter)
         self.main_splitter.addWidget(self.left_menu_widget)
-
+    
         separator = QFrame()
         separator.setFrameShape(QFrame.VLine)
         separator.setFrameShadow(QFrame.Sunken)
         self.main_splitter.addWidget(separator)
-
+    
         self.main_content_widget = QWidget()
         self.main_content_layout = QVBoxLayout(self.main_content_widget)
         self.main_splitter.addWidget(self.main_content_widget)
-
+    
         self.console_output = QPlainTextEdit()
         self.console_output.setReadOnly(True)
         self.console_output.setFixedHeight(100)
         self.layout.addWidget(self.console_output)
-
+    
+        self.create_profile_section()  # Create profile section first
+    
         self.create_left_side_menu()  # Create the left side menu
-
+    
         self.create_main_screen()  # Create the main screen components
         self.create_toggle_mode_screen()  # Create toggle mode components
-
+    
         self.update_visibility()  # Ensure correct visibility at startup
 
     def update_visibility(self):
@@ -169,7 +169,7 @@ class BrightnessControlApp(QMainWindow):
     
         profile_section.addLayout(profile_layout)
     
-        self.layout.addLayout(profile_section)  # Add profile section to the main layout
+        self.main_content_layout.addLayout(profile_section)  # Add profile section to the main content layout
     
         self.add_profile_button.clicked.connect(self.add_profile_dialog)
         self.delete_profile_button.clicked.connect(self.delete_current_profile)
@@ -257,16 +257,23 @@ class BrightnessControlApp(QMainWindow):
     def create_left_side_menu(self):
         self.left_menu = QVBoxLayout()
         self.left_menu.setAlignment(Qt.AlignTop)
+        
+        # Add the image at the top
+        self.logo_label = QLabel(self)
+        pixmap = QPixmap("logo_160w.png")  ## Left Side Image Logo
+        self.logo_label.setPixmap(pixmap)
+        self.logo_label.setAlignment(Qt.AlignCenter)  # Center the image horizontally
+        self.left_menu.addWidget(self.logo_label)
     
         self.refresh_button = self.create_styled_button("Refresh Monitors")
         self.save_settings_button = self.create_styled_button("Save Settings")
         self.save_settings_button.clicked.connect(self.save_profile)
-    
+        
         self.left_menu.addWidget(self.refresh_button)
         self.left_menu.addWidget(self.save_settings_button)
-    
+        
         self.left_menu.addSpacerItem(QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed))
-    
+        
         self.monitor_select_groupbox = QGroupBox("Monitor Select")
         self.monitor_select_groupbox.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.monitor_select_layout = QVBoxLayout(self.monitor_select_groupbox)
@@ -279,14 +286,14 @@ class BrightnessControlApp(QMainWindow):
             checkbox.stateChanged.connect(self.update_monitor_display)
             self.monitor_select_layout.addWidget(checkbox)
         self.left_menu.addWidget(self.monitor_select_groupbox, alignment=Qt.AlignHCenter)
-    
+        
         self.left_menu.addSpacerItem(QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed))
-    
+        
         self.manual_mode_button = self.create_styled_button("Manual Mode", checkable=True)
         self.manual_mode_button.setFixedHeight(40)
         self.manual_mode_button.clicked.connect(self.toggle_manual_mode)
         self.left_menu.addWidget(self.manual_mode_button)
-    
+        
         self.left_menu_layout.addLayout(self.left_menu)
 
     def create_styled_button(self, text, checkable=False):
