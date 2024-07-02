@@ -1,0 +1,13 @@
+
+7/2 Screen Dim Noes
+
+- Toggle Mode Live Feed 
+	-- Toggle Mode Off/Deselected Monitor Icon
+- Brightness Debounce?
+- Fix Control All
+- Console Size Adjust
+- Dark Overlay Active Icon
+- Hotkey for Toggle Integration
+- Solution for more than 8 monitors
+- Monitor Detection
+- Dark Overlay Reset after sleep issue
