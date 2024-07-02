@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QCheckBox, QSlider, QLabel, QFrame, QPlainTextEdit, QSplitter, QGroupBox,
     QSizePolicy, QSpacerItem, QComboBox, QInputDialog, QSpinBox
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QPixmap
 import screen_brightness_control as sbc
 
@@ -87,6 +87,14 @@ class ClickableFrame(QFrame):
         self.image_label.clear()
         self.image_label.setVisible(False)
 
+class OverlayWindow(QWidget):
+    def __init__(self, screen_geometry, opacity):
+        super().__init__()
+        self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint | Qt.Tool | Qt.WindowTransparentForInput)
+        self.setStyleSheet("background-color: rgba(0, 0, 0, 100);")  # Adjust the alpha for transparency
+        self.setGeometry(screen_geometry)
+        self.setWindowOpacity(opacity)
+
 class BrightnessControlApp(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -99,6 +107,8 @@ class BrightnessControlApp(QMainWindow):
         self.brightness_values = [100] * 8  # Only 8 monitors
         self.dimness_values = [50] * 8  # Separate dimness for the bottom row
         self.current_brightness_state = [False] * 8  # Track which brightness state is active
+        self.overlay_opacity_values = [0.0] * 8  # Initial opacity values for dark overlay
+        self.overlay_windows = [None] * 8  # Store overlay windows
 
         self.profile_manager = ProfileManager()
 
@@ -181,7 +191,8 @@ class BrightnessControlApp(QMainWindow):
                 'mode': 'Auto' if not self.manual_mode else 'Toggle',
                 'monitors_selected': [i for i, checkbox in enumerate(self.monitor_checkboxes) if checkbox.isChecked()],
                 'brightness_values': {i: self.brightness_values[i] for i in range(len(self.monitor_checkboxes)) if self.monitor_checkboxes[i].isChecked()},
-                'dimness_values': {i: self.dimness_values[i] for i in range(len(self.monitor_checkboxes)) if self.monitor_checkboxes[i].isChecked()} if self.manual_mode else {}
+                'dimness_values': {i: self.dimness_values[i] for i in range(len(self.monitor_checkboxes)) if self.monitor_checkboxes[i].isChecked()} if self.manual_mode else {},
+                'overlay_opacity_values': {i: self.overlay_opacity_values[i] for i in range(len(self.monitor_checkboxes)) if self.monitor_checkboxes[i].isChecked()}
             }
             self.profile_manager.add_profile(profile_name, profile_data)
             self.console_output.appendPlainText(f'Profile "{profile_name}" added successfully.')
@@ -225,13 +236,20 @@ class BrightnessControlApp(QMainWindow):
     
         self.brightness_values = [100] * 8  # Reset brightness values
         self.dimness_values = [50] * 8  # Reset dimness values
-        for monitor_id_str, brightness_value in profile['brightness_values'].items():
+        self.overlay_opacity_values = [0.0] * 8  # Reset overlay opacity values
+
+        for monitor_id_str, brightness_value in profile.get('brightness_values', {}).items():
             monitor_id = int(monitor_id_str)  # Convert the key to integer
             self.brightness_values[monitor_id] = brightness_value
+
         if self.manual_mode:
-            for monitor_id_str, dimness_value in profile['dimness_values'].items():
+            for monitor_id_str, dimness_value in profile.get('dimness_values', {}).items():
                 monitor_id = int(monitor_id_str)  # Convert the key to integer
                 self.dimness_values[monitor_id] = dimness_value
+
+        for monitor_id_str, overlay_opacity in profile.get('overlay_opacity_values', {}).items():
+            monitor_id = int(monitor_id_str)  # Convert the key to integer
+            self.overlay_opacity_values[monitor_id] = overlay_opacity
     
         self.update_monitor_display()
         self.update_brightness_slider()
@@ -247,7 +265,8 @@ class BrightnessControlApp(QMainWindow):
             'mode': 'Auto' if not self.manual_mode else 'Toggle',
             'monitors_selected': [i for i, checkbox in enumerate(self.monitor_checkboxes) if checkbox.isChecked()],
             'brightness_values': {i: self.brightness_values[i] for i in range(len(self.monitor_checkboxes)) if self.monitor_checkboxes[i].isChecked()},
-            'dimness_values': {i: self.dimness_values[i] for i in range(len(self.monitor_checkboxes)) if self.monitor_checkboxes[i].isChecked()} if self.manual_mode else {}
+            'dimness_values': {i: self.dimness_values[i] for i in range(len(self.monitor_checkboxes)) if self.monitor_checkboxes[i].isChecked()} if self.manual_mode else {},
+            'overlay_opacity_values': {i: self.overlay_opacity_values[i] for i in range(len(self.monitor_checkboxes)) if self.monitor_checkboxes[i].isChecked()}
         }
     
         self.profile_manager.add_profile(profile_name, profile_data)
@@ -359,7 +378,28 @@ class BrightnessControlApp(QMainWindow):
         brightness_layout.addWidget(self.brightness_slider)
         brightness_layout.addWidget(self.brightness_spinbox)
         self.auto_mode_layout.addLayout(brightness_layout)
-    
+
+        overlay_label = QLabel("Overlay Opacity")
+        self.overlay_slider = QSlider(Qt.Horizontal)
+        self.overlay_slider.setRange(0, 100)
+        self.overlay_slider.setValue(0)
+        self.overlay_slider.setTickPosition(QSlider.TicksBelow)
+        self.overlay_slider.setTickInterval(10)
+        self.overlay_slider.valueChanged.connect(self.schedule_update_overlay_opacity)
+
+        self.overlay_spinbox = QSpinBox()
+        self.overlay_spinbox.setRange(0, 100)
+        self.overlay_spinbox.setValue(0)
+        self.overlay_spinbox.setFixedWidth(75)
+        self.overlay_spinbox.valueChanged.connect(self.overlay_slider.setValue)
+        self.overlay_slider.valueChanged.connect(self.overlay_spinbox.setValue)
+
+        overlay_layout = QHBoxLayout()
+        overlay_layout.addWidget(overlay_label)
+        overlay_layout.addWidget(self.overlay_slider)
+        overlay_layout.addWidget(self.overlay_spinbox)
+        self.auto_mode_layout.addLayout(overlay_layout)
+
         self.monitor_frames = [ClickableFrame(self, i) for i in range(8)]  # Only 8 monitors
         for frame in self.monitor_frames:
             frame.setFixedSize(100, 80)
@@ -413,6 +453,27 @@ class BrightnessControlApp(QMainWindow):
         self.dimness_spinbox_manual.setFixedWidth(75)
         self.dimness_spinbox_manual.valueChanged.connect(self.dimness_slider_manual.setValue)
         self.dimness_slider_manual.valueChanged.connect(self.dimness_spinbox_manual.setValue)
+
+        overlay_label_manual = QLabel("Overlay Opacity")
+        self.overlay_slider_manual = QSlider(Qt.Horizontal)
+        self.overlay_slider_manual.setRange(0, 100)
+        self.overlay_slider_manual.setValue(0)
+        self.overlay_slider_manual.setTickPosition(QSlider.TicksBelow)
+        self.overlay_slider_manual.setTickInterval(10)
+        self.overlay_slider_manual.valueChanged.connect(self.schedule_update_overlay_opacity)
+
+        self.overlay_spinbox_manual = QSpinBox()
+        self.overlay_spinbox_manual.setRange(0, 100)
+        self.overlay_spinbox_manual.setValue(0)
+        self.overlay_spinbox_manual.setFixedWidth(75)
+        self.overlay_spinbox_manual.valueChanged.connect(self.overlay_slider_manual.setValue)
+        self.overlay_slider_manual.valueChanged.connect(self.overlay_spinbox_manual.setValue)
+
+        overlay_layout_manual = QHBoxLayout()
+        overlay_layout_manual.addWidget(overlay_label_manual)
+        overlay_layout_manual.addWidget(self.overlay_slider_manual)
+        overlay_layout_manual.addWidget(self.overlay_spinbox_manual)
+        self.manual_mode_layout.addLayout(overlay_layout_manual)
     
         control_all_button_manual = self.create_styled_button("Control All Monitors", checkable=True)
         control_all_button_manual.setFixedSize(180, 40)
@@ -515,7 +576,8 @@ class BrightnessControlApp(QMainWindow):
             self.update_frame_dimness(i)
         self.update_brightness_slider()
         self.clear_selection_styles()  # Clear previous selection styles
-        
+        self.update_all_frames()  # Ensure frames are updated to reflect the current state
+
     def clear_selection_styles(self):
         for frame in self.monitor_frames:
             frame.setStyleSheet("""
@@ -572,16 +634,28 @@ class BrightnessControlApp(QMainWindow):
                 self.dimness_slider_manual.setValue(self.dimness_values[monitor_id])
                 self.dimness_spinbox_manual.setValue(self.dimness_values[monitor_id])
                 self.dimness_slider_manual.blockSignals(False)
+                self.overlay_slider_manual.blockSignals(True)
+                self.overlay_slider_manual.setValue(int(self.overlay_opacity_values[monitor_id] * 100))
+                self.overlay_spinbox_manual.setValue(int(self.overlay_opacity_values[monitor_id] * 100))
+                self.overlay_slider_manual.blockSignals(False)
             else:
                 self.brightness_slider.blockSignals(True)
                 self.brightness_slider.setValue(self.brightness_values[monitor_id])
                 self.brightness_spinbox.setValue(self.brightness_values[monitor_id])
                 self.brightness_slider.blockSignals(False)
+                self.overlay_slider.blockSignals(True)
+                self.overlay_slider.setValue(int(self.overlay_opacity_values[monitor_id] * 100))
+                self.overlay_spinbox.setValue(int(self.overlay_opacity_values[monitor_id] * 100))
+                self.overlay_slider.blockSignals(False)
         elif self.all_monitors_control:
             self.brightness_slider.blockSignals(True)
             self.brightness_slider.setValue(self.brightness_values[0])
             self.brightness_spinbox.setValue(self.brightness_values[0])
             self.brightness_slider.blockSignals(False)
+            self.overlay_slider.blockSignals(True)
+            self.overlay_slider.setValue(int(self.overlay_opacity_values[0] * 100))
+            self.overlay_spinbox.setValue(int(self.overlay_opacity_values[0] * 100))
+            self.overlay_slider.blockSignals(False)
             if self.manual_mode:
                 self.dimness_slider_manual.blockSignals(True)
                 self.dimness_slider_manual.setValue(self.dimness_values[0])
@@ -653,6 +727,50 @@ class BrightnessControlApp(QMainWindow):
                     border: 2px solid blue;
                     border-radius: 10px;
                 """)
+
+        self.update_all_frames()
+
+    def schedule_update_overlay_opacity(self):
+        # Debounce to prevent rapid slider movements from overwhelming the update function
+        if hasattr(self, 'overlay_timer'):
+            self.overlay_timer.stop()
+        else:
+            self.overlay_timer = QTimer(self)
+            self.overlay_timer.setSingleShot(True)
+            self.overlay_timer.timeout.connect(self.update_overlay_opacity)
+        self.overlay_timer.start(100)  # Adjust delay as needed
+
+    def update_overlay_opacity(self):
+        overlay_opacity = self.overlay_slider.value() / 100 if not self.manual_mode else self.overlay_slider_manual.value() / 100
+        num_screens = len(QApplication.screens())
+        if self.all_monitors_control:
+            for i, frame in enumerate(self.monitor_frames):
+                if i >= num_screens:
+                    continue
+                if frame.isVisible():
+                    self.overlay_opacity_values[i] = overlay_opacity
+                    if self.overlay_windows[i] is None:
+                        self.overlay_windows[i] = OverlayWindow(QApplication.screens()[i].geometry(), overlay_opacity)
+                    else:
+                        self.overlay_windows[i].setWindowOpacity(overlay_opacity)
+                    if self.overlay_windows[i].isHidden():
+                        self.overlay_windows[i].show()
+        else:
+            for frame in self.selected_monitors:
+                monitor_id = frame.monitor_id
+                if monitor_id >= num_screens:
+                    continue
+                self.overlay_opacity_values[monitor_id] = overlay_opacity
+                if self.overlay_windows[monitor_id] is None:
+                    self.overlay_windows[monitor_id] = OverlayWindow(QApplication.screens()[monitor_id].geometry(), overlay_opacity)
+                else:
+                    self.overlay_windows[monitor_id].setWindowOpacity(overlay_opacity)
+                if self.overlay_windows[monitor_id].isHidden():
+                    self.overlay_windows[monitor_id].show()
+        if not self.manual_mode:
+            self.overlay_spinbox.setValue(int(overlay_opacity * 100))
+        else:
+            self.overlay_spinbox_manual.setValue(int(overlay_opacity * 100))
 
         self.update_all_frames()
 
