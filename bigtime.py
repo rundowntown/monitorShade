@@ -111,6 +111,7 @@ class BrightnessControlApp(QMainWindow):
         self.overlay_windows = [None] * 8  # Store overlay windows
 
         self.profile_manager = ProfileManager()
+        self.toggle_state = 'top'  # Application-wide toggle state
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
@@ -566,9 +567,17 @@ class BrightnessControlApp(QMainWindow):
             self.monitor_frames_manual[i].setVisible(checkbox.isChecked())
             self.monitor_frames_dimness[i].setVisible(checkbox.isChecked())
             if checkbox.isChecked():
-                self.monitor_frames[i].set_image("monitorImage_on.png")
-                self.monitor_frames_manual[i].set_image("monitorImage_on.png")
-                self.monitor_frames_dimness[i].set_image("monitorImage_on.png")
+                if self.manual_mode:  # Only apply toggle logic in manual mode
+                    if self.toggle_state == 'top':
+                        self.monitor_frames_manual[i].set_image("monitorImage_on.png")
+                        self.monitor_frames_dimness[i].set_image("monitorImage_off.png")
+                        self.current_brightness_state[i] = True  # Set the initial state to match the current toggle state
+                    else:
+                        self.monitor_frames_manual[i].set_image("monitorImage_off.png")
+                        self.monitor_frames_dimness[i].set_image("monitorImage_on.png")
+                        self.current_brightness_state[i] = False  # Set the initial state to match the current toggle state
+                else:
+                    self.monitor_frames[i].set_image("monitorImage_on.png")  # Use a single image for auto mode
             else:
                 self.monitor_frames[i].clear_image()
                 self.monitor_frames_manual[i].clear_image()
@@ -722,16 +731,17 @@ class BrightnessControlApp(QMainWindow):
                         border-radius: 10px;
                     """)
         else:
-            for frame in self.selected_monitors:
-                monitor_id = frame.monitor_id
-                self.dimness_values[monitor_id] = dimness_value
-                frame.setStyleSheet(f"""
-                    background-color: rgb({dimness_color_value}, {dimness_color_value}, {dimness_color_value});
-                    border: 2px solid blue;
-                    border-radius: 10px;
-                """)
-        self.update_toggle_mode_display()  # Update display to show correct images based on toggle mode
-
+            if self.manual_mode:
+                for frame in self.monitor_frames_dimness:
+                    if frame.isVisible() and frame in self.selected_monitors:
+                        monitor_id = frame.monitor_id
+                        self.dimness_values[monitor_id] = dimness_value
+                        frame.setStyleSheet(f"""
+                            background-color: rgb({dimness_color_value}, {dimness_color_value}, {dimness_color_value});
+                            border: 2px solid blue;
+                            border-radius: 10px;
+                        """)
+            self.update_toggle_mode_display()  # Update display to show correct images based on toggle mode
         self.update_all_frames()
 
     def schedule_update_overlay_opacity(self):
@@ -779,6 +789,7 @@ class BrightnessControlApp(QMainWindow):
         self.update_all_frames()
 
     def toggle_brightness(self):
+        self.toggle_state = 'bottom' if self.toggle_state == 'top' else 'top'
         for i in range(8):  # Assuming 8 monitors
             if self.monitor_checkboxes[i].isChecked():
                 if self.current_brightness_state[i]:
@@ -786,6 +797,11 @@ class BrightnessControlApp(QMainWindow):
                 else:
                     sbc.set_brightness(self.dimness_values[i], display=i)
                 self.current_brightness_state[i] = not self.current_brightness_state[i]
+                # Forcefully set the brightness values based on the current toggle state
+                if self.toggle_state == 'top':
+                    sbc.set_brightness(self.brightness_values[i], display=i)
+                else:
+                    sbc.set_brightness(self.dimness_values[i], display=i)
         self.update_toggle_mode_display()  # Update display to show correct images based on toggle mode
 
     def update_frame_brightness(self, monitor_id):
@@ -836,12 +852,12 @@ class BrightnessControlApp(QMainWindow):
     def update_toggle_mode_display(self):
         if self.manual_mode:
             for i in range(8):
-                if self.current_brightness_state[i]:
-                    self.monitor_frames_manual[i].set_image("monitorImage_off.png")
-                    self.monitor_frames_dimness[i].set_image("monitorImage_on.png")
-                else:
+                if self.toggle_state == 'top':
                     self.monitor_frames_manual[i].set_image("monitorImage_on.png")
                     self.monitor_frames_dimness[i].set_image("monitorImage_off.png")
+                else:
+                    self.monitor_frames_manual[i].set_image("monitorImage_off.png")
+                    self.monitor_frames_dimness[i].set_image("monitorImage_on.png")
 
     def update_all_frames(self):
         for i in range(len(self.monitor_frames)):
