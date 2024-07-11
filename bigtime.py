@@ -115,6 +115,14 @@ class BrightnessControlApp(QMainWindow):
         self.profile_manager = ProfileManager()
         self.toggle_state = 'top'  # Application-wide toggle state
 
+        self.brightness_timer = QTimer(self)
+        self.brightness_timer.setSingleShot(True)
+        self.brightness_timer.timeout.connect(self.apply_brightness_update)
+
+        self.dimness_timer = QTimer(self)
+        self.dimness_timer.setSingleShot(True)
+        self.dimness_timer.timeout.connect(self.apply_dimness_update)
+
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
 
@@ -362,7 +370,7 @@ class BrightnessControlApp(QMainWindow):
         self.brightness_slider.setValue(100)
         self.brightness_slider.setTickPosition(QSlider.TicksBelow)
         self.brightness_slider.setTickInterval(10)
-        self.brightness_slider.valueChanged.connect(self.update_brightness)
+        self.brightness_slider.valueChanged.connect(self.schedule_brightness_update)
 
         self.brightness_spinbox = QSpinBox()
         self.brightness_spinbox.setRange(0, 100)
@@ -433,7 +441,7 @@ class BrightnessControlApp(QMainWindow):
         self.brightness_slider_manual.setValue(100)
         self.brightness_slider_manual.setTickPosition(QSlider.TicksBelow)
         self.brightness_slider_manual.setTickInterval(10)
-        self.brightness_slider_manual.valueChanged.connect(self.update_brightness)
+        self.brightness_slider_manual.valueChanged.connect(self.schedule_brightness_update)
 
         self.brightness_spinbox_manual = QSpinBox()
         self.brightness_spinbox_manual.setRange(0, 100)
@@ -448,7 +456,7 @@ class BrightnessControlApp(QMainWindow):
         self.dimness_slider_manual.setValue(50)
         self.dimness_slider_manual.setTickPosition(QSlider.TicksBelow)
         self.dimness_slider_manual.setTickInterval(10)
-        self.dimness_slider_manual.valueChanged.connect(self.update_dimness)
+        self.dimness_slider_manual.valueChanged.connect(self.schedule_dimness_update)
 
         self.dimness_spinbox_manual = QSpinBox()
         self.dimness_spinbox_manual.setRange(0, 100)
@@ -675,7 +683,13 @@ class BrightnessControlApp(QMainWindow):
                 self.dimness_spinbox_manual.setValue(self.dimness_values[0])
                 self.dimness_slider_manual.blockSignals(False)
 
-    def update_brightness(self):
+    def schedule_brightness_update(self):
+        self.brightness_timer.start(40)  # Adjust debounce time as needed
+
+    def schedule_dimness_update(self):
+        self.dimness_timer.start(40)  # Adjust debounce time as needed
+
+    def apply_brightness_update(self):
         brightness_value = self.brightness_slider.value() if not self.manual_mode else self.brightness_slider_manual.value()
         brightness_color_value = int((brightness_value / 100) * 255)
     
@@ -692,15 +706,18 @@ class BrightnessControlApp(QMainWindow):
                         sbc.set_brightness(brightness_value, display=i)
         else:
             if self.manual_mode:
-                for frame in self.monitor_frames_manual:
-                    if frame.isVisible() and frame in self.selected_monitors:
-                        monitor_id = frame.monitor_id
-                        self.brightness_values[monitor_id] = brightness_value
-                        frame.setStyleSheet(f"""
-                            background-color: rgb({brightness_color_value}, {brightness_color_value}, {brightness_color_value});
-                            border: 2px solid blue;
-                            border-radius: 10px;
-                        """)
+                for frame in self.selected_monitors:
+                    monitor_id = frame.monitor_id
+                    self.brightness_values[monitor_id] = brightness_value
+                    frame.setStyleSheet(f"""
+                        background-color: rgb({brightness_color_value}, {brightness_color_value}, {brightness_color_value});
+                        border: 2px solid blue;
+                        border-radius: 10px;
+                    """)
+                    if self.toggle_state == 'top':
+                        sbc.set_brightness(brightness_value, display=monitor_id)
+                    else:
+                        sbc.set_brightness(self.dimness_values[monitor_id], display=monitor_id)
                 self.update_toggle_mode_display()  # Update display to show correct images based on toggle mode
             else:
                 for frame in self.selected_monitors:
@@ -720,7 +737,7 @@ class BrightnessControlApp(QMainWindow):
         
         self.update_all_frames()
 
-    def update_dimness(self):
+    def apply_dimness_update(self):
         dimness_value = self.dimness_slider_manual.value()
         dimness_color_value = int((dimness_value / 100) * 255)
         if self.all_monitors_control:
@@ -734,16 +751,19 @@ class BrightnessControlApp(QMainWindow):
                     """)
         else:
             if self.manual_mode:
-                for frame in self.monitor_frames_dimness:
-                    if frame.isVisible() and frame in self.selected_monitors:
-                        monitor_id = frame.monitor_id
-                        self.dimness_values[monitor_id] = dimness_value
-                        frame.setStyleSheet(f"""
-                            background-color: rgb({dimness_color_value}, {dimness_color_value}, {dimness_color_value});
-                            border: 2px solid blue;
-                            border-radius: 10px;
-                        """)
-            self.update_toggle_mode_display()  # Update display to show correct images based on toggle mode
+                for frame in self.selected_monitors:
+                    monitor_id = frame.monitor_id
+                    self.dimness_values[monitor_id] = dimness_value
+                    frame.setStyleSheet(f"""
+                        background-color: rgb({dimness_color_value}, {dimness_color_value}, {dimness_color_value});
+                        border: 2px solid blue;
+                        border-radius: 10px;
+                    """)
+                    if self.toggle_state == 'bottom':
+                        sbc.set_brightness(dimness_value, display=monitor_id)
+                    else:
+                        sbc.set_brightness(self.brightness_values[monitor_id], display=monitor_id)
+                self.update_toggle_mode_display()  # Update display to show correct images based on toggle mode
         self.update_all_frames()
 
     def schedule_update_overlay_opacity(self):
@@ -871,3 +891,4 @@ if __name__ == "__main__":
     window = BrightnessControlApp()
     window.show()
     app.exec()
+
