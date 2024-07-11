@@ -89,5 +89,8 @@
             "2": 0,
             "3": 0
         }
+    },
+    "hotkey": {
+        "hotkey": "Ctrl+Shift+4"
     }
 }

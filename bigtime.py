@@ -58,7 +58,7 @@ class ProfileManager:
         return self.profiles.get(profile_name, None)            
 
     def get_profiles_by_mode(self, mode):
-        return {name: data for name, data in self.profiles.items() if data['mode'] == mode}
+        return {name: data for name, data in self.profiles.items() if data.get('mode') == mode}
 
 class ClickableFrame(QFrame):
     def __init__(self, app, monitor_id, parent=None):
@@ -891,4 +891,3 @@ if __name__ == "__main__":
     window = BrightnessControlApp()
     window.show()
     app.exec()
-
