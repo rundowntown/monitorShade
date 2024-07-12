@@ -46,7 +46,8 @@
             "0": 0.0,
             "1": 0.0,
             "2": 0.0
-        }
+        },
+        "hotkey": "Ctrl + Shift + #"
     },
     "MostDark": {
         "mode": "Toggle",
@@ -67,7 +68,14 @@
             "1": 0,
             "2": 0,
             "3": 0
-        }
+        },
+        "overlay_opacity_values": {
+            "0": 0.0,
+            "1": 0.0,
+            "2": 0.0,
+            "3": 0.0
+        },
+        "hotkey": "Ctrl + Shift + $"
     },
     "Movie_Night": {
         "mode": "Toggle",

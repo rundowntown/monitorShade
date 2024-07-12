@@ -13,10 +13,10 @@ import re
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
     QCheckBox, QSlider, QLabel, QFrame, QPlainTextEdit, QSplitter, QGroupBox,
-    QSizePolicy, QSpacerItem, QComboBox, QInputDialog, QSpinBox
+    QSizePolicy, QSpacerItem, QComboBox, QSpinBox, QDialog, QInputDialog, QDialogButtonBox
 )
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QPixmap, QKeySequence
 import screen_brightness_control as sbc
 
 ## Validate Profile Name
@@ -97,6 +97,52 @@ class OverlayWindow(QWidget):
         self.setGeometry(screen_geometry)
         self.setWindowOpacity(opacity)
 
+
+class HotkeyDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle('Set Hotkey')
+        self.setFixedSize(300, 150)
+
+        self.key_sequence = []
+        
+        layout = QVBoxLayout(self)
+        
+        self.description_label = QLabel('Press the desired hotkey combination:')
+        layout.addWidget(self.description_label)
+        
+        self.hotkey_display_frame = QFrame()
+        self.hotkey_display_frame.setFrameShape(QFrame.Box)
+        layout.addWidget(self.hotkey_display_frame)
+        
+        self.hotkey_label = QLabel('')
+        self.hotkey_label.setAlignment(Qt.AlignCenter)
+        self.hotkey_display_frame_layout = QVBoxLayout(self.hotkey_display_frame)
+        self.hotkey_display_frame_layout.addWidget(self.hotkey_label)
+        
+        # Add dialog buttons
+        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        layout.addWidget(self.button_box)
+        
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.reject)
+        
+    def keyPressEvent(self, event):
+        key = event.key()
+        modifiers = event.modifiers()
+        self.key_sequence = []
+
+        if modifiers & Qt.ControlModifier:
+            self.key_sequence.append('Ctrl')
+        if modifiers & Qt.ShiftModifier:
+            self.key_sequence.append('Shift')
+        if modifiers & Qt.AltModifier:
+            self.key_sequence.append('Alt')
+        if key not in [Qt.Key_Control, Qt.Key_Shift, Qt.Key_Alt]:
+            self.key_sequence.append(QKeySequence(key).toString())
+
+        self.hotkey_label.setText(' + '.join(self.key_sequence))
+
 class BrightnessControlApp(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -114,6 +160,7 @@ class BrightnessControlApp(QMainWindow):
 
         self.profile_manager = ProfileManager()
         self.toggle_state = 'top'  # Application-wide toggle state
+        self.hotkey = None  # Initialize the hotkey attribute
 
         self.brightness_timer = QTimer(self)
         self.brightness_timer.setSingleShot(True)
@@ -203,7 +250,8 @@ class BrightnessControlApp(QMainWindow):
                 'monitors_selected': [i for i, checkbox in enumerate(self.monitor_checkboxes) if checkbox.isChecked()],
                 'brightness_values': {i: self.brightness_values[i] for i in range(len(self.monitor_checkboxes)) if self.monitor_checkboxes[i].isChecked()},
                 'dimness_values': {i: self.dimness_values[i] for i in range(len(self.monitor_checkboxes)) if self.monitor_checkboxes[i].isChecked()} if self.manual_mode else {},
-                'overlay_opacity_values': {i: self.overlay_opacity_values[i] for i in range(len(self.monitor_checkboxes)) if self.monitor_checkboxes[i].isChecked()}
+                'overlay_opacity_values': {i: self.overlay_opacity_values[i] for i in range(len(self.monitor_checkboxes)) if self.monitor_checkboxes[i].isChecked()},
+                'hotkey': self.hotkey if self.hotkey else None
             }
             self.profile_manager.add_profile(profile_name, profile_data)
             self.console_output.appendPlainText(f'Profile "{profile_name}" added successfully.')
@@ -237,7 +285,7 @@ class BrightnessControlApp(QMainWindow):
     def apply_profile(self, profile):
         self.manual_mode = profile['mode'] == 'Toggle'
         if hasattr(self, 'manual_mode_button'):
-            self.manual_mode_button.setChecked(self.manual_mode)  # Ensure this is set after initialization
+            self.manual_mode_button.setChecked(self.manual_mode)
         self.update_visibility()
     
         self.selected_monitors.clear()  # Clear the selected monitors
@@ -261,6 +309,10 @@ class BrightnessControlApp(QMainWindow):
         for monitor_id_str, overlay_opacity in profile.get('overlay_opacity_values', {}).items():
             monitor_id = int(monitor_id_str)  # Convert the key to integer
             self.overlay_opacity_values[monitor_id] = overlay_opacity
+
+        if 'hotkey' in profile:
+            self.hotkey = profile['hotkey']
+            self.console_output.appendPlainText(f'Hotkey loaded: {self.hotkey}')
     
         self.update_monitor_display()
         self.update_brightness_slider()
@@ -277,7 +329,8 @@ class BrightnessControlApp(QMainWindow):
             'monitors_selected': [i for i, checkbox in enumerate(self.monitor_checkboxes) if checkbox.isChecked()],
             'brightness_values': {i: self.brightness_values[i] for i in range(len(self.monitor_checkboxes)) if self.monitor_checkboxes[i].isChecked()},
             'dimness_values': {i: self.dimness_values[i] for i in range(len(self.monitor_checkboxes)) if self.monitor_checkboxes[i].isChecked()} if self.manual_mode else {},
-            'overlay_opacity_values': {i: self.overlay_opacity_values[i] for i in range(len(self.monitor_checkboxes)) if self.monitor_checkboxes[i].isChecked()}
+            'overlay_opacity_values': {i: self.overlay_opacity_values[i] for i in range(len(self.monitor_checkboxes)) if self.monitor_checkboxes[i].isChecked()},
+            'hotkey': self.hotkey if self.hotkey else None
         }
     
         self.profile_manager.add_profile(profile_name, profile_data)
@@ -495,6 +548,11 @@ class BrightnessControlApp(QMainWindow):
         self.toggle_brightness_button.setFixedSize(180, 40)
         self.toggle_brightness_button.clicked.connect(self.toggle_brightness)
         self.manual_mode_layout.addWidget(self.toggle_brightness_button, alignment=Qt.AlignCenter)
+
+        self.set_hotkey_button = self.create_styled_button("Set Hotkey")
+        self.set_hotkey_button.setFixedSize(180, 40)
+        self.set_hotkey_button.clicked.connect(self.set_hotkey)
+        self.manual_mode_layout.addWidget(self.set_hotkey_button, alignment=Qt.AlignCenter)
     
         brightness_layout_manual = QHBoxLayout()
         brightness_layout_manual.addWidget(brightness_label_manual)
@@ -885,6 +943,33 @@ class BrightnessControlApp(QMainWindow):
         for i in range(len(self.monitor_frames)):
             self.update_frame_brightness(i)
             self.update_frame_dimness(i)
+
+    def set_hotkey(self):
+        key_dialog = HotkeyDialog(self)
+        if key_dialog.exec() == QDialog.Accepted and key_dialog.key_sequence:
+            self.hotkey = ' + '.join(key_dialog.key_sequence)
+            self.console_output.appendPlainText(f'Hotkey set to: {self.hotkey}')
+
+    def keyPressEvent(self, event):
+        if self.hotkey:
+            key_sequence = []
+            modifiers = event.modifiers()
+
+            if modifiers & Qt.ControlModifier:
+                key_sequence.append('Ctrl')
+            if modifiers & Qt.ShiftModifier:
+                key_sequence.append('Shift')
+            if modifiers & Qt.AltModifier:
+                key_sequence.append('Alt')
+            if event.key() not in [Qt.Key_Control, Qt.Key_Shift, Qt.Key_Alt]:
+                key_sequence.append(QKeySequence(event.key()).toString())
+
+            pressed_hotkey = ' + '.join(key_sequence)
+            if pressed_hotkey == self.hotkey:
+                self.toggle_brightness()
+                return
+
+        super().keyPressEvent(event)
 
 if __name__ == "__main__":
     app = QApplication([])

@@ -7,7 +7,7 @@
 - Fix Control All
 - Console Size Adjust
 - Dark Overlay Active Icon
-- Hotkey for Toggle Integration
+- Hotkey for Toggle Integration XX
 - Solution for more than 8 monitors
 - Monitor Detection
 - Dark Overlay Reset after sleep issue
