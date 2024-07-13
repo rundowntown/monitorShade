@@ -412,10 +412,31 @@ class BrightnessControlApp(QMainWindow):
         self.auto_mode_widget = QGroupBox("Auto Mode")
         self.auto_mode_layout = QVBoxLayout(self.auto_mode_widget)
     
+        self.monitor_name_layout = QHBoxLayout()
+        self.monitor_name_labels = [QLabel("") for _ in range(8)]
+        for label in self.monitor_name_labels:
+            label.setAlignment(Qt.AlignCenter)
+            label.setVisible(False)
+            self.monitor_name_layout.addWidget(label)
+    
+        ## Add spacer to adjust vertical spacing
+        self.auto_mode_layout.addLayout(self.monitor_name_layout)
+        ## Adjust Monitor Text Label Height
+        self.auto_mode_layout.addSpacerItem(QSpacerItem(20, -100, QSizePolicy.Minimum, QSizePolicy.Fixed))
+    
         self.monitor_display_area = QWidget()
         self.monitor_display_area.setFixedSize(800, 150)  # Adjusted height for single row of monitors
         self.monitor_display_layout = QHBoxLayout(self.monitor_display_area)
         self.auto_mode_layout.addWidget(self.monitor_display_area)
+    
+        self.monitor_frames = [ClickableFrame(self, i) for i in range(8)]  # Only 8 monitors
+        for frame in self.monitor_frames:
+            frame.setFixedSize(100, 80)
+            frame.setVisible(False)
+            self.monitor_display_layout.addWidget(frame)
+    
+        self.main_screen.addWidget(self.auto_mode_widget)
+        self.main_content_layout.addLayout(self.main_screen)
     
         brightness_label = QLabel("Brightness")
         self.brightness_slider = QSlider(Qt.Horizontal)
@@ -424,7 +445,7 @@ class BrightnessControlApp(QMainWindow):
         self.brightness_slider.setTickPosition(QSlider.TicksBelow)
         self.brightness_slider.setTickInterval(10)
         self.brightness_slider.valueChanged.connect(self.schedule_brightness_update)
-
+    
         self.brightness_spinbox = QSpinBox()
         self.brightness_spinbox.setRange(0, 100)
         self.brightness_spinbox.setValue(100)
@@ -442,7 +463,7 @@ class BrightnessControlApp(QMainWindow):
         brightness_layout.addWidget(self.brightness_slider)
         brightness_layout.addWidget(self.brightness_spinbox)
         self.auto_mode_layout.addLayout(brightness_layout)
-
+    
         overlay_label = QLabel("Overlay Opacity")
         self.overlay_slider = QSlider(Qt.Horizontal)
         self.overlay_slider.setRange(0, 100)
@@ -450,34 +471,37 @@ class BrightnessControlApp(QMainWindow):
         self.overlay_slider.setTickPosition(QSlider.TicksBelow)
         self.overlay_slider.setTickInterval(10)
         self.overlay_slider.valueChanged.connect(self.schedule_update_overlay_opacity)
-
+    
         self.overlay_spinbox = QSpinBox()
         self.overlay_spinbox.setRange(0, 100)
         self.overlay_spinbox.setValue(0)
         self.overlay_spinbox.setFixedWidth(75)
         self.overlay_spinbox.valueChanged.connect(self.overlay_slider.setValue)
         self.overlay_slider.valueChanged.connect(self.overlay_spinbox.setValue)
-
+    
         overlay_layout = QHBoxLayout()
         overlay_layout.addWidget(overlay_label)
         overlay_layout.addWidget(self.overlay_slider)
         overlay_layout.addWidget(self.overlay_spinbox)
         self.auto_mode_layout.addLayout(overlay_layout)
 
-        self.monitor_frames = [ClickableFrame(self, i) for i in range(8)]  # Only 8 monitors
-        for frame in self.monitor_frames:
-            frame.setFixedSize(100, 80)
-            frame.setVisible(False)
-            self.monitor_display_layout.addWidget(frame)
-    
-        self.main_screen.addWidget(self.auto_mode_widget)
-        self.main_content_layout.addLayout(self.main_screen)
-
     def create_toggle_mode_screen(self):
         self.toggle_mode_screen = QVBoxLayout()
     
         self.manual_mode_widget = QGroupBox("Toggle Mode")
         self.manual_mode_layout = QVBoxLayout(self.manual_mode_widget)
+    
+        self.monitor_name_layout_manual = QHBoxLayout()
+        self.monitor_name_labels_manual = [QLabel("") for _ in range(8)]
+        for label in self.monitor_name_labels_manual:
+            label.setAlignment(Qt.AlignCenter)
+            label.setVisible(False)
+            self.monitor_name_layout_manual.addWidget(label)
+    
+        ## Add spacer to adjust vertical spacing
+        self.manual_mode_layout.addLayout(self.monitor_name_layout_manual)
+        ## Adjust Monitor Text Label Height
+        self.manual_mode_layout.addSpacerItem(QSpacerItem(20, -40, QSizePolicy.Minimum, QSizePolicy.Fixed))  
     
         self.monitor_display_area_manual = QWidget()
         self.monitor_display_area_manual.setFixedSize(800, 300)  # Adjusted height for two rows of monitors
@@ -495,7 +519,7 @@ class BrightnessControlApp(QMainWindow):
         self.brightness_slider_manual.setTickPosition(QSlider.TicksBelow)
         self.brightness_slider_manual.setTickInterval(10)
         self.brightness_slider_manual.valueChanged.connect(self.schedule_brightness_update)
-
+    
         self.brightness_spinbox_manual = QSpinBox()
         self.brightness_spinbox_manual.setRange(0, 100)
         self.brightness_spinbox_manual.setValue(100)
@@ -510,14 +534,14 @@ class BrightnessControlApp(QMainWindow):
         self.dimness_slider_manual.setTickPosition(QSlider.TicksBelow)
         self.dimness_slider_manual.setTickInterval(10)
         self.dimness_slider_manual.valueChanged.connect(self.schedule_dimness_update)
-
+    
         self.dimness_spinbox_manual = QSpinBox()
         self.dimness_spinbox_manual.setRange(0, 100)
         self.dimness_spinbox_manual.setValue(50)
         self.dimness_spinbox_manual.setFixedWidth(75)
         self.dimness_spinbox_manual.valueChanged.connect(self.dimness_slider_manual.setValue)
         self.dimness_slider_manual.valueChanged.connect(self.dimness_spinbox_manual.setValue)
-
+    
         overlay_label_manual = QLabel("Overlay Opacity")
         self.overlay_slider_manual = QSlider(Qt.Horizontal)
         self.overlay_slider_manual.setRange(0, 100)
@@ -525,14 +549,14 @@ class BrightnessControlApp(QMainWindow):
         self.overlay_slider_manual.setTickPosition(QSlider.TicksBelow)
         self.overlay_slider_manual.setTickInterval(10)
         self.overlay_slider_manual.valueChanged.connect(self.schedule_update_overlay_opacity)
-
+    
         self.overlay_spinbox_manual = QSpinBox()
         self.overlay_spinbox_manual.setRange(0, 100)
         self.overlay_spinbox_manual.setValue(0)
         self.overlay_spinbox_manual.setFixedWidth(75)
         self.overlay_spinbox_manual.valueChanged.connect(self.overlay_slider_manual.setValue)
         self.overlay_slider_manual.valueChanged.connect(self.overlay_spinbox_manual.setValue)
-
+    
         overlay_layout_manual = QHBoxLayout()
         overlay_layout_manual.addWidget(overlay_label_manual)
         overlay_layout_manual.addWidget(self.overlay_slider_manual)
@@ -548,7 +572,7 @@ class BrightnessControlApp(QMainWindow):
         self.toggle_brightness_button.setFixedSize(180, 40)
         self.toggle_brightness_button.clicked.connect(self.toggle_brightness)
         self.manual_mode_layout.addWidget(self.toggle_brightness_button, alignment=Qt.AlignCenter)
-
+    
         self.set_hotkey_button = self.create_styled_button("Set Hotkey")
         self.set_hotkey_button.setFixedSize(180, 40)
         self.set_hotkey_button.clicked.connect(self.set_hotkey)
@@ -580,6 +604,7 @@ class BrightnessControlApp(QMainWindow):
     
         self.toggle_mode_screen.addWidget(self.manual_mode_widget)
         self.main_content_layout.addLayout(self.toggle_mode_screen)
+    
 
     def toggle_manual_mode(self):
         self.manual_mode = self.manual_mode_button.isChecked()
@@ -588,6 +613,30 @@ class BrightnessControlApp(QMainWindow):
         self.update_monitor_display()
         self.load_profiles()
         self.update_toggle_mode_display()  # Update display to show correct images based on toggle mode
+        
+        
+    def update_monitor_names(self):
+        for i, label in enumerate(self.monitor_name_labels):
+            if self.monitor_checkboxes[i].isChecked():
+                label.setText(f"Monitor {i + 1}")
+                label.setVisible(True)
+                label.setAlignment(Qt.AlignCenter)
+                label.setFixedWidth(self.monitor_frames[i].width())
+            else:
+                label.setText("")
+                label.setVisible(False)
+        for i, label in enumerate(self.monitor_name_labels_manual):
+            if self.monitor_checkboxes[i].isChecked():
+                label.setText(f"Monitor {i + 1}")
+                label.setVisible(True)
+                label.setAlignment(Qt.AlignCenter)
+                label.setFixedWidth(self.monitor_frames_manual[i].width())
+            else:
+                label.setText("")
+                label.setVisible(False) 
+        
+        
+        
 
     def select_all_monitors(self):
         select_all_state = self.select_all_checkbox.isChecked()
@@ -656,6 +705,8 @@ class BrightnessControlApp(QMainWindow):
         self.clear_selection_styles()  # Clear previous selection styles
         self.update_all_frames()  # Ensure frames are updated to reflect the current state
         self.update_toggle_mode_display()  # Update display to show correct images based on toggle mode
+    
+        self.update_monitor_names()  # Add this line to update monitor names
 
     def clear_selection_styles(self):
         for frame in self.monitor_frames:
