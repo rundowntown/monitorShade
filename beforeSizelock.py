@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jun 27 16:45:43 2024
-
-Main Script
+Created on Fri Jul 12 22:05:23 2024
 
 @author: dforc
 """
+
 import json
 import os
 import sys
@@ -410,7 +409,6 @@ class BrightnessControlApp(QMainWindow):
         self.main_screen = QVBoxLayout()
     
         self.auto_mode_widget = QGroupBox("Auto Mode")
-        self.auto_mode_widget.setFixedSize(800, 600)  # Set your desired size
         self.auto_mode_layout = QVBoxLayout(self.auto_mode_widget)
     
         self.monitor_name_layout = QHBoxLayout()
@@ -420,15 +418,17 @@ class BrightnessControlApp(QMainWindow):
             label.setVisible(False)
             self.monitor_name_layout.addWidget(label)
     
+        ## Add spacer to adjust vertical spacing
         self.auto_mode_layout.addLayout(self.monitor_name_layout)
-        self.auto_mode_layout.addSpacerItem(QSpacerItem(20, -50, QSizePolicy.Minimum, QSizePolicy.Fixed))
+        ## Adjust Monitor Text Label Height
+        self.auto_mode_layout.addSpacerItem(QSpacerItem(20, -100, QSizePolicy.Minimum, QSizePolicy.Fixed))
     
         self.monitor_display_area = QWidget()
-        self.monitor_display_area.setFixedSize(800, 150)
+        self.monitor_display_area.setFixedSize(800, 150)  # Adjusted height for single row of monitors
         self.monitor_display_layout = QHBoxLayout(self.monitor_display_area)
         self.auto_mode_layout.addWidget(self.monitor_display_area)
     
-        self.monitor_frames = [ClickableFrame(self, i) for i in range(8)]
+        self.monitor_frames = [ClickableFrame(self, i) for i in range(8)]  # Only 8 monitors
         for frame in self.monitor_frames:
             frame.setFixedSize(100, 80)
             frame.setVisible(False)
@@ -483,12 +483,11 @@ class BrightnessControlApp(QMainWindow):
         overlay_layout.addWidget(self.overlay_slider)
         overlay_layout.addWidget(self.overlay_spinbox)
         self.auto_mode_layout.addLayout(overlay_layout)
-    
+
     def create_toggle_mode_screen(self):
         self.toggle_mode_screen = QVBoxLayout()
     
         self.manual_mode_widget = QGroupBox("Toggle Mode")
-        self.manual_mode_widget.setFixedSize(800, 600)  # Set your desired size
         self.manual_mode_layout = QVBoxLayout(self.manual_mode_widget)
     
         self.monitor_name_layout_manual = QHBoxLayout()
@@ -498,11 +497,13 @@ class BrightnessControlApp(QMainWindow):
             label.setVisible(False)
             self.monitor_name_layout_manual.addWidget(label)
     
+        ## Add spacer to adjust vertical spacing
         self.manual_mode_layout.addLayout(self.monitor_name_layout_manual)
-        self.manual_mode_layout.addSpacerItem(QSpacerItem(20, -40, QSizePolicy.Minimum, QSizePolicy.Fixed))
+        ## Adjust Monitor Text Label Height
+        self.manual_mode_layout.addSpacerItem(QSpacerItem(20, -40, QSizePolicy.Minimum, QSizePolicy.Fixed))  
     
         self.monitor_display_area_manual = QWidget()
-        self.monitor_display_area_manual.setFixedSize(800, 300)
+        self.monitor_display_area_manual.setFixedSize(800, 300)  # Adjusted height for two rows of monitors
         self.monitor_display_layout_manual = QVBoxLayout(self.monitor_display_area_manual)
         self.monitor_display_layout_manual_row1 = QHBoxLayout()
         self.monitor_display_layout_manual_row2 = QHBoxLayout()
@@ -588,8 +589,8 @@ class BrightnessControlApp(QMainWindow):
         dimness_layout_manual.addWidget(self.dimness_spinbox_manual)
         self.manual_mode_layout.addLayout(dimness_layout_manual)
     
-        self.monitor_frames_manual = [ClickableFrame(self, i) for i in range(8)]
-        self.monitor_frames_dimness = [ClickableFrame(self, i) for i in range(8)]
+        self.monitor_frames_manual = [ClickableFrame(self, i) for i in range(8)]  # Only 8 monitors for brightness
+        self.monitor_frames_dimness = [ClickableFrame(self, i) for i in range(8)]  # Only 8 monitors for dimness
         for frame in self.monitor_frames_manual:
             frame.setFixedSize(100, 80)
             frame.setVisible(False)

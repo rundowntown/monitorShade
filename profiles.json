@@ -28,24 +28,24 @@
     "AllWhite": {
         "mode": "Toggle",
         "monitors_selected": [
-            0,
             1,
-            2
+            2,
+            3
         ],
         "brightness_values": {
-            "0": 100,
             "1": 100,
-            "2": 100
+            "2": 100,
+            "3": 100
         },
         "dimness_values": {
-            "0": 50,
-            "1": 100,
-            "2": 50
+            "1": 20,
+            "2": 20,
+            "3": 20
         },
         "overlay_opacity_values": {
-            "0": 0.0,
-            "1": 0.0,
-            "2": 0.0
+            "1": 0.36,
+            "2": 0.36,
+            "3": 0.36
         },
         "hotkey": "Ctrl + Shift + %"
     },
@@ -96,7 +96,14 @@
             "1": 0,
             "2": 0,
             "3": 0
-        }
+        },
+        "overlay_opacity_values": {
+            "0": 0.0,
+            "1": 0.6,
+            "2": 0.6,
+            "3": 0.6
+        },
+        "hotkey": "Ctrl + Shift + %"
     },
     "hotkey": {
         "hotkey": "Ctrl+Shift+4"
