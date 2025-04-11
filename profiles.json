@@ -11,7 +11,13 @@
             "2": 100,
             "3": 100
         },
-        "dimness_values": {}
+        "dimness_values": {},
+        "overlay_opacity_values": {
+            "1": 0.0,
+            "2": 0.0,
+            "3": 0.0
+        },
+        "hotkey": null
     },
     "AutoTestTwoScreen": {
         "mode": "Auto",
