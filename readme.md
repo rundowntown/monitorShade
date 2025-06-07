@@ -8,7 +8,7 @@ A PySide6 desktop application to control brightness, dimness, and overlay opacit
 🖥️ Multi-Monitor Brightness Controller
 This app was originally built as a personal tool for a multi-monitor setup. Its core functionality is to apply toggleable brightness and configuration presets per monitor, making it easy to switch between customized setups—or manually adjust each screen—on the fly. It supports up to 8 monitors on the same system.
 
-🌙 Dark Overlay Feature
+#### 🌙 Dark Overlay Feature
 Some monitors won’t dim as low as desired even at their lowest brightness settings. To solve this, the app includes a Dark Overlay feature, which places a semi-transparent black layer over each selected screen. This allows you to dim monitors far beyond their built-in limits—without modifying any monitor hardware or firmware. You can control the overlay’s transparency to achieve nearly pitch-black output when needed.
 
 <p align="center">
