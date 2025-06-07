@@ -11,7 +11,9 @@ Addtionally, some monitors have a minimum 'brightness' setting that's still brig
 Seriously it can get very dark.
 <p align="center">
   <img src="/Readme_Images/darkness.png" alt="Toggle Mode" width="80%">
-</p>
+</p>  
+
+
 ## 🖥️ Features
 
 - **Auto Mode**: Adjust and lock brightness on selected monitors  
