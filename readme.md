@@ -1,6 +1,12 @@
 A PySide6 desktop application to control brightness, dimness, and overlay opacity across up to 8 monitors. Supports hotkey toggling, profile saving, and visual monitor previews.
 
 ---
+![](/Readme_Images/toggle-mode.png)
+This was made as a personal app for my main system, which has several monitors.  It's core functionality is to set toggleable settings individually for each monitor, which you can quickly toggle between presets (or adjust manually on the fly) for all the monitors at once, allowing a truly customizable and quick dim switch for up to 8 monitors on the same system.
+
+Addtionally, some monitors have a minimum 'brightness' setting that's still bright, so there is a 'Dark Overlay' feature that allows you to turn them down far beyond what many will normally allow.  This isn't done by hacking into any monitor functionality -- it overlays a semi-transparent opaque black overlay over each selected monitor.  You can adjust the transparency percent to get an almost pitch black output.
+
+Seriously it can get very dark.
 
 ## 🖥️ Features
 
