@@ -12,13 +12,13 @@ This app was originally built as a personal tool for a multi-monitor setup. Its 
 Some monitors won’t dim as low as desired even at their lowest brightness settings. To solve this, the app includes a Dark Overlay feature, which places a semi-transparent black layer over each selected screen. This allows you to dim monitors far beyond their built-in limits—without modifying any monitor hardware or firmware. You can control the overlay’s transparency to achieve nearly pitch-black output when needed.
 
 <p align="center">
-  <img src="/Readme_Images/dim-select.png" alt="Toggle Mode" width="60%">
+  <img src="/Readme_Images/dim-select.png" alt="Toggle Mode" width="70%">
 </p>
 
 
 Seriously it can get very dark.
 <p align="center">
-  <img src="/Readme_Images/darkness.png" alt="Toggle Mode" width="60%">
+  <img src="/Readme_Images/darkness.png" alt="Toggle Mode" width="70%">
 </p>  
 
 
