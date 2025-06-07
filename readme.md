@@ -5,7 +5,7 @@ A PySide6 desktop application to control brightness, dimness, and overlay opacit
   <img src="/Readme_Images/toggle-mode.png" alt="Toggle Mode" width="80%">
 </p>
 
-🖥️ Multi-Monitor Brightness Controller
+#### 🖥️ Multi-Monitor Brightness Controller
 This app was originally built as a personal tool for a multi-monitor setup. Its core functionality is to apply toggleable brightness and configuration presets per monitor, making it easy to switch between customized setups—or manually adjust each screen—on the fly. It supports up to 8 monitors on the same system.
 
 #### 🌙 Dark Overlay Feature
