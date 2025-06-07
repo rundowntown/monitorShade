@@ -62,8 +62,6 @@ python monitorShade.py
     │   ├── logo_160w.png           # Sidebar logo
     │   ├── icon2.png               # PyInstaller icon (alt 1)
     │   └── icon3.png               # PyInstaller icon (alt 2)
-    ├── dist/                   # PyInstaller output
-    └── build/                  # PyInstaller temp files
 
 ---
 
