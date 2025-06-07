@@ -82,7 +82,7 @@ Built icon file can also be found in assets/monitor-icon.ico
 
 ---
 
-## ✅ Roadmap
+## ✅ Roadmap (Read: Likely never)
 
 - [ ] System tray support  
 - [ ] Named monitor detection  
@@ -93,3 +93,4 @@ Built icon file can also be found in assets/monitor-icon.ico
 ## 📝 License
 
 MIT License © 2025
+rundowntown / daniel forcade
