@@ -1,0 +1,117 @@
+{
+    "AutoTest": {
+        "mode": "Auto",
+        "monitors_selected": [
+            1,
+            2,
+            3
+        ],
+        "brightness_values": {
+            "1": 100,
+            "2": 100,
+            "3": 100
+        },
+        "dimness_values": {},
+        "overlay_opacity_values": {
+            "1": 0.0,
+            "2": 0.0,
+            "3": 0.0
+        },
+        "hotkey": null
+    },
+    "AutoTestTwoScreen": {
+        "mode": "Auto",
+        "monitors_selected": [
+            0,
+            2
+        ],
+        "brightness_values": {
+            "0": 100,
+            "2": 68
+        },
+        "dimness_values": {}
+    },
+    "AllWhite": {
+        "mode": "Toggle",
+        "monitors_selected": [
+            1,
+            2,
+            3
+        ],
+        "brightness_values": {
+            "1": 100,
+            "2": 100,
+            "3": 100
+        },
+        "dimness_values": {
+            "1": 20,
+            "2": 20,
+            "3": 20
+        },
+        "overlay_opacity_values": {
+            "1": 0.36,
+            "2": 0.36,
+            "3": 0.36
+        },
+        "hotkey": "Ctrl + Shift + %"
+    },
+    "MostDark": {
+        "mode": "Toggle",
+        "monitors_selected": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "brightness_values": {
+            "0": 62,
+            "1": 62,
+            "2": 62,
+            "3": 62
+        },
+        "dimness_values": {
+            "0": 0,
+            "1": 0,
+            "2": 0,
+            "3": 0
+        },
+        "overlay_opacity_values": {
+            "0": 0.0,
+            "1": 0.0,
+            "2": 0.0,
+            "3": 0.0
+        },
+        "hotkey": "Ctrl + Shift + $"
+    },
+    "Movie_Night": {
+        "mode": "Toggle",
+        "monitors_selected": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "brightness_values": {
+            "0": 100,
+            "1": 100,
+            "2": 100,
+            "3": 100
+        },
+        "dimness_values": {
+            "0": 95,
+            "1": 20,
+            "2": 20,
+            "3": 20
+        },
+        "overlay_opacity_values": {
+            "0": 0.0,
+            "1": 0.8,
+            "2": 0.8,
+            "3": 0.8
+        },
+        "hotkey": "Ctrl + Shift + %"
+    },
+    "hotkey": {
+        "hotkey": "Ctrl+Shift+4"
+    }
+}
