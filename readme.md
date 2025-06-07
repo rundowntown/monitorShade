@@ -8,6 +8,11 @@ This was made as a personal app for my main system, which has several monitors. 
 
 Addtionally, some monitors have a minimum 'brightness' setting that's still bright, so there is a 'Dark Overlay' feature that allows you to turn them down far beyond what many will normally allow.  This isn't done by hacking into any monitor functionality -- it overlays a semi-transparent opaque black overlay over each selected monitor.  You can adjust the transparency percent to get an almost pitch black output.
 
+<p align="center">
+  <img src="/Readme_Images/dim-select.png" alt="Toggle Mode" width="60%">
+</p>
+
+
 Seriously it can get very dark.
 <p align="center">
   <img src="/Readme_Images/darkness.png" alt="Toggle Mode" width="80%">
