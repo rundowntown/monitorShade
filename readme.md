@@ -1,8 +1,32 @@
+<div align="center">
+
 # MonitorShade
 
-**Take control of your screen brightness.** MonitorShade lets you dim any monitor on your Windows PC — individually, beyond what your hardware allows — and save your favorite setups as one-click profiles.
+**Multi-monitor brightness control for Windows.**
+Dim any screen beyond hardware limits. Save profiles. Switch with a hotkey.
 
-Whether you're reducing eye strain at night, setting up a dark room for movies, or just want your side monitors dimmer while you work, MonitorShade has you covered.
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0078D4?style=flat-square&logo=windows)](https://github.com/rundowntown/monitorShade)
+[![Version](https://img.shields.io/badge/version-2.0.0-6366f1?style=flat-square)](https://github.com/rundowntown/monitorShade/releases)
+[![Electron](https://img.shields.io/badge/Electron-34-47848F?style=flat-square&logo=electron&logoColor=white)](https://www.electronjs.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/badge/license-MIT-22c55e?style=flat-square)](LICENSE)
+
+</div>
+
+---
+
+> Whether you're reducing eye strain at night, setting up a dark room for movies, or just want your side monitors dimmer while you work — MonitorShade has you covered.
+
+<p align="center">
+  <video src="Demo_Video/screenDimDemo_1_cropped.mp4" width="720" autoplay loop muted playsinline>
+    Your browser does not support the video tag.
+  </video>
+</p>
+
+<p align="center">
+  <img src="assets/screenshot.png" alt="MonitorShade dashboard — Georgia Tech theme with 4 monitors" width="720">
+</p>
 
 ---
 
@@ -58,69 +82,75 @@ The overlay isn't just black — pick a tint that suits the mood:
 
 ## Using the App
 
-### The Dashboard
+### Dashboard
 
-When you open MonitorShade, you see a visual layout of your monitors. Each one shows its current brightness and has its own slider.
+Open MonitorShade and you see your monitors laid out visually. Each one shows its current brightness and has its own slider.
 
-- **Click a monitor** to select it, then adjust its brightness or overlay independently
-- **"Control All" toggle** — adjust every monitor at once
-- **Drag monitors** around the canvas to match how they're arranged on your desk
-- **Double-click a monitor's name** to rename it (e.g., "Display 2" → "Right Ultrawide")
+| Action | What happens |
+|---|---|
+| **Click a monitor** | Select it — adjust brightness or overlay independently |
+| **"Control All" toggle** | Adjust every monitor at once |
+| **Drag a monitor** | Rearrange the canvas to match your physical desk layout |
+| **Double-click a name** | Rename it (e.g., "Display 2" → "Right Ultrawide") |
 
 ### Modes
 
 | Mode | Behavior |
 |---|---|
-| **Auto** | Set your brightness/overlay levels and they stay put |
-| **Toggle** | Switch between two brightness presets with a hotkey — great for quickly going dim ↔ bright |
+| **Auto** | Set your levels and they stay put |
+| **Toggle** | Flip between two brightness presets with a hotkey — dim ↔ bright in one keystroke |
 
 ### Profiles
 
-Save any combination of per-monitor brightness, overlay, and mode as a **profile**:
+Save any setup as a **profile** you can recall instantly:
 
-1. Set up your monitors how you like
-2. Click **Save** and give it a name + emoji (e.g., 🎬 Movie Night)
-3. Switch back to it anytime with one click — from the app or the system tray
+1. Adjust your monitors how you like them
+2. Click **Save** — name it and pick an emoji (e.g., 🎬 Movie Night)
+3. Restore it anytime from the app or the system tray
 
 ### System Tray
 
-When you close the window, MonitorShade keeps running in your system tray (the little icons near your clock). Right-click the tray icon to:
+Closing the window doesn't quit MonitorShade — it stays in your system tray. Right-click the icon to:
 
-- Switch between saved profiles
-- Reset all monitors to full brightness
-- Open the app or quit entirely
+- **Switch profiles** without opening the window
+- **Full Power** — reset all monitors to 100%
+- **Open** or **Quit**
 
 ### Global Hotkeys
 
-Set a keyboard shortcut (like `Ctrl+Shift+D`) in **Settings** to toggle brightness without switching windows. Works even when MonitorShade is in the background.
+Assign a shortcut (e.g., `Ctrl+Shift+D`) in **Settings → Hotkeys**. Works even when MonitorShade is in the background — no need to alt-tab.
 
 ### Themes
 
-Five built-in color themes: **Dark**, **Light**, **Midnight**, **Forest**, and **Georgia Tech**. When your screens get dim, the UI automatically shifts to high-contrast "Tron mode" so controls stay readable.
+Five built-in themes: **Dark** · **Light** · **Midnight** · **Forest** · **Georgia Tech**
 
-You can also drag-and-drop a custom logo onto the sidebar to personalize each theme.
+When your screens are dimmed low, the UI automatically flips to high-contrast **Tron mode** so controls stay readable. You can also drag-and-drop a custom logo onto the sidebar for each theme.
 
 ---
 
 ## What's New in v2.0
 
-Complete rewrite from the original Python app to a modern desktop application. Highlights:
+Complete rewrite from Python/PySide6 to **Electron + React + TypeScript**.
 
-- Free-form monitor arrangement with drag-and-drop
-- Profile system with emoji icons and system tray switching
-- Per-monitor dark overlays with 6 color tints
-- 5 themes with animated canvas borders
-- Global hotkeys that work when the app is unfocused
-- Close-to-tray background operation
+| Area | What changed |
+|---|---|
+| **UI** | Free-form drag-and-drop monitor grid, 5 themes, animated canvas border |
+| **Profiles** | Named presets with emoji icons, one-click switching from app or tray |
+| **Overlay** | Per-monitor dark overlays with 6 color tints |
+| **Hotkeys** | Global shortcuts that work even when the app is unfocused |
+| **Tray** | Runs in background, profile switching from system tray |
+| **Architecture** | Multi-process Electron with IPC bridge, Zustand state, Python subprocess for DDC/CI |
 
 ---
 
 ## For Developers
 
 <details>
-<summary>Development setup, build commands, and project structure</summary>
+<summary><strong>Dev setup, build commands, tech stack, and project structure</strong></summary>
 
-### Setup
+<br>
+
+### Quick Start
 
 ```bash
 cd screendim
@@ -293,6 +323,10 @@ The original Python/PySide6 application is preserved in `legacy/monitorShade.py`
 
 ---
 
-## License
+<div align="center">
 
-MIT License © 2025 daniel forcade
+**MIT License** · © 2025 Daniel Forcade
+
+*Built with Electron, React, TypeScript, and too many late nights staring at bright monitors.*
+
+</div>
