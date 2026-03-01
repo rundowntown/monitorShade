@@ -16,7 +16,7 @@ Dim any screen beyond hardware limits. Save profiles. Switch with a hotkey.
 
 ---
 
-> Whether you're reducing eye strain at night, setting up a dark room for movies, or just want your side monitors dimmer while you work — MonitorShade has you covered.
+> **Personal project** — built to scratch my own itch with bright monitors at night. Whether you're reducing eye strain, setting up a dark room for movies, or just want your side monitors dimmer while you work — MonitorShade has you covered.
 
 <p align="center">
   <img src="assets/demo.gif" alt="MonitorShade demo" width="720">
@@ -306,7 +306,7 @@ The original Python/PySide6 application is preserved in `legacy/monitorShade.py`
 
 <div align="center">
 
-**MIT License** · © 2025 Daniel Forcade
+**MIT License** · © 2026 Daniel Forcade
 
 *Built with Electron, React, TypeScript, and too many late nights staring at bright monitors.*
 
