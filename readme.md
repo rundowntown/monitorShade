@@ -59,19 +59,6 @@ MonitorShade gives you two ways to dim a screen:
 
 You can use either or both at the same time. The overlay is especially useful for screens that don't support DDC/CI (like many laptops) or when you need to go *darker than dark*.
 
-### Overlay colors
-
-The overlay isn't just black — pick a tint that suits the mood:
-
-| Color | Best for |
-|---|---|
-| **Black** | General dimming |
-| **Warm** | Comfortable nighttime use |
-| **Amber** | Reducing blue light |
-| **Night Blue** | Subtle cool tone |
-| **Darkroom** | Red light for dark-adapted eyes |
-| **Sepia** | Warm, paper-like tone for reading |
-
 ---
 
 ## Using the App
@@ -130,7 +117,7 @@ Complete rewrite from Python/PySide6 to **Electron + React + TypeScript**.
 |---|---|
 | **UI** | Free-form drag-and-drop monitor grid, 5 themes, animated canvas border |
 | **Profiles** | Named presets with emoji icons, one-click switching from app or tray |
-| **Overlay** | Per-monitor dark overlays with 6 color tints |
+| **Overlay** | Per-monitor dark overlays that dim beyond hardware limits |
 | **Hotkeys** | Global shortcuts that work even when the app is unfocused |
 | **Tray** | Runs in background, profile switching from system tray |
 | **Architecture** | Multi-process Electron with IPC bridge, Zustand state, Python subprocess for DDC/CI |
