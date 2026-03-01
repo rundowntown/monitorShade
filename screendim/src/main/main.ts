@@ -4,7 +4,7 @@ import { registerIpcHandlers } from './ipc/handlers';
 import { createTray, destroyTray } from './services/tray';
 import { removeAllOverlays } from './services/overlay';
 import { unregisterAllHotkeys } from './services/hotkeys';
-import { destroyBrightnessProcess } from './services/brightness';
+import { destroyBrightnessProcess, initBrightnessDaemon } from './services/brightness';
 import { getSettings } from './services/profiles';
 import { getMonitors } from './services/monitors';
 import { IPC_CHANNELS } from '../shared/constants';
@@ -67,6 +67,7 @@ function createWindow(): BrowserWindow {
 }
 
 app.whenReady().then(() => {
+  initBrightnessDaemon();
   mainWindow = createWindow();
   registerIpcHandlers(mainWindow);
   createTray(mainWindow);

@@ -48,6 +48,10 @@
       {
         "from": "assets",
         "to": "assets"
+      },
+      {
+        "from": "src/main/scripts",
+        "to": "scripts"
       }
     ],
     "directories": {

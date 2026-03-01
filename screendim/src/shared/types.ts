@@ -72,10 +72,15 @@ export interface ThemeColors {
   borderAccent: string;
 }
 
+export interface IpcResult {
+  ok: boolean;
+  error?: string;
+}
+
 export interface ElectronAPI {
   getMonitors: () => Promise<MonitorInfo[]>;
   getBrightness: (displayId: number) => Promise<number>;
-  setBrightness: (displayId: number, value: number) => Promise<void>;
+  setBrightness: (displayId: number, value: number) => Promise<IpcResult>;
   setOverlay: (displayId: number, opacity: number, color?: string) => Promise<void>;
   removeOverlay: (displayId: number) => Promise<void>;
   getProfiles: () => Promise<Record<string, Profile>>;

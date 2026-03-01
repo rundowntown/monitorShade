@@ -17,7 +17,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   });
 
   ipcMain.handle(IPC_CHANNELS.SET_BRIGHTNESS, async (_event, displayId: number, value: number) => {
-    await setBrightness(displayId, value);
+    return await setBrightness(displayId, value);
   });
 
   ipcMain.handle(IPC_CHANNELS.SET_OVERLAY, (_event, displayId: number, opacity: number, color?: string) => {

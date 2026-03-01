@@ -1,0 +1,20 @@
+perf(brightness): persistent Python daemon, overlay fade, IPC errors
+
+Replace per-call Python subprocess with a persistent brightness daemon:
+- Python process stays alive, receives JSON commands over stdin/stdout
+- Eliminates ~300ms process spawn overhead per brightness call
+- Heartbeat every 10s with auto-respawn if daemon dies
+- Watchdog kills and restarts after 3 missed heartbeats
+
+Add overlay fade transitions:
+- 100ms ease-out fade-in when overlays appear
+- 100ms ease-in fade-out before overlay windows close
+- Smoother perceived quality when switching profiles
+
+Add IPC error result types:
+- setBrightness now returns { ok, error? } instead of void
+- BrightnessResult interface for typed error handling
+- IpcResult shared type for future IPC error patterns
+- Daemon errors surface with descriptive messages
+
+Bundle daemon script via extraResources for packaged builds.
