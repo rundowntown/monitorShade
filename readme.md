@@ -19,13 +19,7 @@ Dim any screen beyond hardware limits. Save profiles. Switch with a hotkey.
 > Whether you're reducing eye strain at night, setting up a dark room for movies, or just want your side monitors dimmer while you work — MonitorShade has you covered.
 
 <p align="center">
-  <video src="Demo_Video/screenDimDemo_1_cropped.mp4" width="720" autoplay loop muted playsinline>
-    Your browser does not support the video tag.
-  </video>
-</p>
-
-<p align="center">
-  <img src="assets/screenshot.png" alt="MonitorShade dashboard — Georgia Tech theme with 4 monitors" width="720">
+  <img src="assets/demo.gif" alt="MonitorShade demo" width="720">
 </p>
 
 ---
